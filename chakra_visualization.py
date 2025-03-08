@@ -5,12 +5,13 @@ from matplotlib.collections import PatchCollection
 from assets.chakra_info import chakra_data
 import utils
 
-def create_chakra_visualization(energy_values):
+def create_chakra_visualization(energy_values, language='en'):
     """
     Create a visualization of chakras and biofield based on energy values.
     
     Parameters:
     energy_values (dict): Dictionary with chakra names as keys and energy percentages (0-100) as values
+    language (str): Language code ('en' or 'ru')
     
     Returns:
     matplotlib.figure.Figure: Figure containing the visualization
@@ -22,7 +23,7 @@ def create_chakra_visualization(energy_values):
     draw_silhouette(ax)
     
     # Draw chakras
-    draw_chakras(ax, energy_values)
+    draw_chakras(ax, energy_values, language)
     
     # Draw the aura/biofield
     draw_biofield(ax, energy_values)
@@ -55,7 +56,7 @@ def draw_silhouette(ax):
     # Legs
     ax.plot([-0.5, 0, 0.5], [2, 0.5, 2], color='gray', linewidth=1, alpha=0.7)
 
-def draw_chakras(ax, energy_values):
+def draw_chakras(ax, energy_values, language='en'):
     """Draw the chakras along the spine"""
     # Define chakra positions along the spine
     positions = {
@@ -70,6 +71,8 @@ def draw_chakras(ax, energy_values):
     
     for chakra in chakra_data:
         name = chakra["name"]
+        # Get the localized name for display
+        name_display = chakra["name_ru"] if language == 'ru' else name
         base_color = chakra["color_rgb"]
         position = positions[name]
         energy = energy_values[name] / 100.0  # Convert to 0-1 scale
@@ -96,7 +99,7 @@ def draw_chakras(ax, energy_values):
         
         # Add label
         label_y_offset = -0.4 if name == "Root" else 0.4
-        ax.text(position[0], position[1] + label_y_offset, name, 
+        ax.text(position[0], position[1] + label_y_offset, name_display, 
                 ha='center', va='center', color='white', fontsize=8)
 
 def draw_biofield(ax, energy_values):
