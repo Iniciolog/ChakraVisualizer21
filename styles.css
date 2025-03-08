@@ -27,6 +27,70 @@ p, li, div {
     line-height: 1.6;
 }
 
+/* Dropdown menus and selectors */
+div[data-baseweb="select"] {
+    background-color: #14142B !important;
+}
+
+div[data-baseweb="popover"] {
+    background-color: #14142B !important;
+}
+
+div[data-baseweb="select"] > div {
+    background-color: #14142B !important;
+    color: #e0e0e0 !important;
+}
+
+div[data-baseweb="menu"] {
+    background-color: #14142B !important;
+}
+
+div[data-baseweb="menu"] ul {
+    background-color: #14142B !important;
+}
+
+div[data-baseweb="menu"] li {
+    background-color: #14142B !important;
+    color: #e0e0e0 !important;
+}
+
+div[data-baseweb="menu"] li:hover {
+    background-color: #252550 !important;
+}
+
+/* Radio button styling */
+div[role="radiogroup"] label {
+    color: #e0e0e0 !important;
+}
+
+div[data-testid="stMarkdownContainer"] > div > div {
+    background-color: #14142B !important;
+}
+
+/* Date picker styling */
+div[data-baseweb="calendar"] {
+    background-color: #14142B !important;
+    color: #e0e0e0 !important;
+}
+
+div[data-baseweb="calendar"] button {
+    color: #e0e0e0 !important;
+}
+
+div[data-baseweb="calendar"] button:hover {
+    background-color: #252550 !important;
+}
+
+div[data-baseweb="popover-container"] {
+    background-color: #14142B !important;
+}
+
+input {
+    background-color: #14142B !important;
+    color: #e0e0e0 !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
 /* Slider customization */
 .stSlider > div {
     padding-top: 0 !important;
@@ -72,7 +136,7 @@ p, li, div {
 }
 
 /* Widget label styling */
-.stSlider label, .stSelectbox label {
+.stSlider label, .stSelectbox label, .stDateInput label, .stTextInput label {
     color: #c0c0c0 !important;
 }
 
