@@ -1,0 +1,106 @@
+/* Custom Styles for Chakra Visualization App */
+
+/* Page background */
+.stApp {
+    background: linear-gradient(to bottom, #0a0a1a, #000000);
+}
+
+/* Header styling */
+h1, h2, h3 {
+    color: #e0e0e0 !important;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-weight: 300;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+/* Text styling */
+p, li, div {
+    color: #d0d0d0;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Slider customization */
+.stSlider > div {
+    padding-top: 0 !important;
+    padding-bottom: 1rem !important;
+}
+
+.css-1y4p8pa {
+    margin-bottom: 0 !important;
+}
+
+/* Tabs styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 50px;
+    white-space: pre-wrap;
+    border-radius: 4px 4px 0px 0px;
+    margin-right: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Button styling */
+.stButton>button {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 0.3rem 1rem;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.stButton>button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Widget label styling */
+.stSlider label, .stSelectbox label {
+    color: #c0c0c0 !important;
+}
+
+/* Sidebar styling */
+.css-1d391kg {
+    background-color: rgba(10, 10, 26, 0.7);
+}
+
+/* Footer styling */
+footer {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+/* Card-like containers */
+.css-1r6slb0 {
+    background-color: rgba(30, 30, 50, 0.3);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Chakra info containers */
+.stTab > div {
+    background-color: rgba(30, 30, 50, 0.3);
+    border-radius: 0 8px 8px 8px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
