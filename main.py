@@ -2,12 +2,16 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 from chakra_visualization import create_chakra_visualization
+from chakra_visualization_3d import create_chakra_visualization_3d
 from assets.chakra_info import chakra_data, app_text
 import utils
 
-# Initialize session state for language
+# Initialize session state for language and view mode
 if 'language' not in st.session_state:
     st.session_state.language = 'ru'  # Default to Russian
+    
+if 'view_mode' not in st.session_state:
+    st.session_state.view_mode = '2d'  # Default to 2D view
 
 # Get text based on selected language
 def get_text(key):
@@ -42,6 +46,26 @@ with st.sidebar:
     elif lang_option == "Русский" and st.session_state.language != 'ru':
         st.session_state.language = 'ru'
         st.rerun()
+        
+    # Add visualization mode selector
+    st.title("🔄 " + get_text("view_mode"))
+    view_mode = st.radio(
+        label=get_text("view_mode"),
+        options=[get_text("view_2d"), get_text("view_3d")],
+        index=0 if st.session_state.view_mode == '2d' else 1,
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    
+    # Update view mode
+    new_mode = '2d' if view_mode == get_text("view_2d") else '3d'
+    if st.session_state.view_mode != new_mode:
+        st.session_state.view_mode = new_mode
+        st.rerun()
+    
+    # Help text for 3D mode
+    if st.session_state.view_mode == '3d':
+        st.info(get_text("view_3d_help"))
 
 # Page title and introduction
 st.title(get_text("app_title"))
@@ -96,11 +120,13 @@ with col1:
 with col2:
     st.header(get_text("visual_header"))
     
-    # Create the chakra visualization based on current energy values
-    fig = create_chakra_visualization(st.session_state.energy_values, st.session_state.language)
-    
-    # Display the visualization
-    st.pyplot(fig)
+    # Create the chakra visualization based on current energy values and view mode
+    if st.session_state.view_mode == '2d':
+        fig = create_chakra_visualization(st.session_state.energy_values, st.session_state.language)
+        st.pyplot(fig)
+    else:  # 3D mode
+        fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
+        st.plotly_chart(fig_3d, use_container_width=True, height=700)
 
 # Detailed information section
 st.header(get_text("info_header"))
