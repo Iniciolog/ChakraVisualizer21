@@ -71,7 +71,64 @@ with st.sidebar:
 st.title(get_text("app_title"))
 st.markdown(get_text("app_intro"))
 
-# Create two columns for layout
+# Client information form
+st.header(get_text("client_info_header"))
+
+# Initialize session state for client info
+if 'client_info' not in st.session_state:
+    st.session_state.client_info = {
+        'fullname': '',
+        'birthdate': None,
+        'phone': '',
+        'email': ''
+    }
+
+# Create two columns for client info
+col1, col2 = st.columns(2)
+
+with col1:
+    # ФИО
+    fullname = st.text_input(
+        get_text("fullname"),
+        value=st.session_state.client_info['fullname']
+    )
+    st.session_state.client_info['fullname'] = fullname
+    
+    # Телефон
+    phone = st.text_input(
+        get_text("phone"),
+        value=st.session_state.client_info['phone']
+    )
+    st.session_state.client_info['phone'] = phone
+
+with col2:
+    # Дата рождения
+    birthdate = st.date_input(
+        get_text("birthdate"),
+        value=st.session_state.client_info['birthdate'] if st.session_state.client_info['birthdate'] else None
+    )
+    st.session_state.client_info['birthdate'] = birthdate
+    
+    # Email
+    email = st.text_input(
+        get_text("email"),
+        value=st.session_state.client_info['email']
+    )
+    st.session_state.client_info['email'] = email
+
+# Add save button
+save_col1, save_col2 = st.columns([1, 3])
+with save_col1:
+    if st.button(get_text("save_client"), type="primary"):
+        st.success(f"{get_text('fullname')}: {st.session_state.client_info['fullname']}\n"
+                 f"{get_text('birthdate')}: {st.session_state.client_info['birthdate']}\n"
+                 f"{get_text('phone')}: {st.session_state.client_info['phone']}\n"
+                 f"{get_text('email')}: {st.session_state.client_info['email']}")
+
+# Divider
+st.markdown("---")
+
+# Create two columns for main layout
 col1, col2 = st.columns([1, 2])
 
 with col1:
