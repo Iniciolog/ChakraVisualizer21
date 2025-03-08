@@ -1,13 +1,46 @@
 /* Custom Styles for Chakra Visualization App */
 
-/* Page background */
+/* Force dark theme for the entire app */
+:root {
+    --background-color: #0E0E20;
+    --secondary-bg-color: #14142B;
+    --text-color: #E0E0E0;
+    --accent-color: #7A6EBF;
+}
+
+/* Override all Streamlit defaults */
+.main .block-container, 
+header[data-testid="stHeader"],
+section[data-testid="stSidebar"],
+div.stTabs,
+div.stDateInput,
+div.stTextInput,
+div.stNumberInput,
+div[data-baseweb="base-input"],
+div[data-baseweb="input"],
+div[data-baseweb="select"],
+div[data-baseweb="popover"],
+div[data-baseweb="menu"],
+div[data-baseweb="select"] div,
+div[data-baseweb="calendar"],
+div[data-testid="stAppViewContainer"],
+div[data-testid="stToolbar"],
+div[data-testid="stDecoration"],
+div[data-testid="stStatusWidget"],
+div.stRadio,
+label, button, input, select, textarea {
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Page background with gradient */
 .stApp {
-    background: linear-gradient(to bottom, #0a0a1a, #000000);
+    background: linear-gradient(to bottom, #0a0a1a, #000000) !important;
 }
 
 /* Header styling */
-h1, h2, h3 {
-    color: #e0e0e0 !important;
+h1, h2, h3, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+    color: var(--text-color) !important;
     font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -20,85 +53,58 @@ h1 {
 }
 
 /* Text styling */
-p, li, div {
-    color: #d0d0d0;
+p, li, div, span, a {
+    color: var(--text-color) !important;
     font-family: 'Helvetica Neue', Arial, sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
-}
-
-/* Dropdown menus and selectors */
-div[data-baseweb="select"] {
-    background-color: #14142B !important;
-}
-
-div[data-baseweb="popover"] {
-    background-color: #14142B !important;
-}
-
-div[data-baseweb="select"] > div {
-    background-color: #14142B !important;
-    color: #e0e0e0 !important;
-}
-
-div[data-baseweb="menu"] {
-    background-color: #14142B !important;
-}
-
-div[data-baseweb="menu"] ul {
-    background-color: #14142B !important;
-}
-
-div[data-baseweb="menu"] li {
-    background-color: #14142B !important;
-    color: #e0e0e0 !important;
-}
-
-div[data-baseweb="menu"] li:hover {
-    background-color: #252550 !important;
 }
 
 /* Radio button styling */
-div[role="radiogroup"] label {
-    color: #e0e0e0 !important;
+div[role="radiogroup"] label span,
+div[role="radio"] label span,
+div.stRadio label span {
+    color: var(--text-color) !important;
 }
 
-div[data-testid="stMarkdownContainer"] > div > div {
-    background-color: #14142B !important;
+/* Dropdown menu - extra aggressive selectors */
+div[role="listbox"],
+ul[role="listbox"],
+li[role="option"],
+div[class*="Select"],
+div[data-baseweb*="select"],
+div[data-baseweb*="menu"],
+div[data-baseweb*="popover"],
+div[data-baseweb*="calendar"],
+div[class*="menu"] {
+    background-color: var(--secondary-bg-color) !important;
+    color: var(--text-color) !important;
 }
 
-/* Date picker styling */
-div[data-baseweb="calendar"] {
-    background-color: #14142B !important;
-    color: #e0e0e0 !important;
+/* Dropdown hover states */
+li[role="option"]:hover,
+div[data-baseweb*="menu"] li:hover,
+div[class*="menuItem"]:hover {
+    background-color: var(--accent-color) !important;
 }
 
-div[data-baseweb="calendar"] button {
-    color: #e0e0e0 !important;
+/* Inputs styling */
+input, select, textarea {
+    background-color: var(--secondary-bg-color) !important;
+    color: var(--text-color) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
-div[data-baseweb="calendar"] button:hover {
-    background-color: #252550 !important;
-}
-
-div[data-baseweb="popover-container"] {
-    background-color: #14142B !important;
-}
-
-input {
-    background-color: #14142B !important;
-    color: #e0e0e0 !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
+/* Calendar dates */
+div[data-baseweb="calendar"] div,
+div[data-baseweb="calendar"] button,
+div[data-baseweb="calendar"] span {
+    color: var(--text-color) !important;
+    background-color: var(--secondary-bg-color) !important;
 }
 
 /* Slider customization */
 .stSlider > div {
     padding-top: 0 !important;
     padding-bottom: 1rem !important;
-}
-
-.css-1y4p8pa {
-    margin-bottom: 0 !important;
 }
 
 /* Tabs styling */
@@ -121,9 +127,9 @@ input {
 
 /* Button styling */
 .stButton>button {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-radius: 4px;
     padding: 0.3rem 1rem;
     font-size: 14px;
@@ -131,18 +137,18 @@ input {
 }
 
 .stButton>button:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Widget label styling */
-.stSlider label, .stSelectbox label, .stDateInput label, .stTextInput label {
-    color: #c0c0c0 !important;
-}
-
-/* Sidebar styling */
-.css-1d391kg {
-    background-color: rgba(10, 10, 26, 0.7);
+.stSlider label, 
+.stSelectbox label, 
+.stDateInput label, 
+.stTextInput label,
+label[data-baseweb="checkbox"] span,
+label[data-testid="stWidgetLabel"] {
+    color: var(--text-color) !important;
 }
 
 /* Footer styling */
@@ -155,7 +161,7 @@ footer {
 
 /* Card-like containers */
 .css-1r6slb0 {
-    background-color: rgba(30, 30, 50, 0.3);
+    background-color: rgba(30, 30, 50, 0.3) !important;
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -163,8 +169,17 @@ footer {
 
 /* Chakra info containers */
 .stTab > div {
-    background-color: rgba(30, 30, 50, 0.3);
+    background-color: rgba(30, 30, 50, 0.3) !important;
     border-radius: 0 8px 8px 8px;
     padding: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Override any white backgrounds that might appear */
+[style*="background-color: rgb(255, 255, 255)"],
+[style*="background-color:#fff"],
+[style*="background-color: #ffffff"],
+[style*="background: white"],
+[style*="background:white"] {
+    background-color: var(--background-color) !important;
 }

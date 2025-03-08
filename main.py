@@ -27,7 +27,40 @@ st.set_page_config(
 
 # Custom CSS
 with open('styles.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    css_content = f.read()
+    
+# Add inline CSS for critical elements that need dark theming
+additional_css = """
+<style>
+/* Force dark theme for dropdowns and other elements */
+div[data-baseweb="select"], 
+div[data-baseweb="popover"],
+div[data-baseweb="menu"],
+div[role="listbox"],
+ul[role="listbox"],
+li[role="option"] {
+    background-color: #14142B !important;
+    color: #E0E0E0 !important;
+}
+
+/* Override any inline styles that might use white backgrounds */
+[style*="background-color: rgb(255, 255, 255)"],
+[style*="background-color:#fff"],
+[style*="background-color: #ffffff"],
+[style*="background: white"],
+[style*="background:white"] {
+    background-color: #0E0E20 !important;
+}
+
+/* Header area fix */
+header[data-testid="stHeader"] {
+    background-color: #0E0E20 !important;
+}
+</style>
+"""
+
+# Apply both the CSS file styles and additional inline styles
+st.markdown(f'<style>{css_content}</style>{additional_css}', unsafe_allow_html=True)
 
 # Language selector in sidebar
 with st.sidebar:
