@@ -145,14 +145,14 @@ chakra_data = [
 # Text translations
 app_text = {
     "en": {
-        "page_title": "Chakra & Biofield Visualization",
-        "app_title": "Chakra & Biofield Energy Visualization",
-        "app_intro": "This application visualizes your chakras and biofield based on energy parameters. Adjust the sliders to see how different energy levels affect the visualization.",
-        "param_header": "Chakra Energy Parameters",
+        "page_title": "Energo-Visual",
+        "app_title": "Energo-Visual",
+        "app_intro": "Application for displaying the results of psycho-energetic diagnostics of energy centers and biofield. Developed at the Research Center for Initiology and Transpersonal Psychology. Application author and creator V. P. Lazarenko. Designed for professional psychics. Recommended for diagnostics starting from the 1st stage of Initiology using the method of psychic vision, biolocation on a 100% scale. The diagnostic data needs to be set in the application settings to obtain the original image of chakras and biofield in accordance with the diagnostic results.",
+        "param_header": "Energy Center Parameters",
         "param_desc": "Adjust the energy level for each chakra (0-100%):",
         "energy_suffix": "Energy",
         "reset_button": "Reset All to 100%",
-        "visual_header": "Chakra & Biofield Visualization",
+        "visual_header": "Energy & Biofield Visualization",
         "view_mode": "Visualization Mode",
         "view_2d": "2D View",
         "view_3d": "3D View",
@@ -166,17 +166,17 @@ app_text = {
         "balanced_qualities": "Balanced Qualities",
         "imbalanced_signs": "Imbalanced Signs", 
         "healing_practices": "Healing Practices",
-        "footer": "Created with ❤️ for holistic energy visualization"
+        "footer": "Developed at the Research Center for Initiology and Transpersonal Psychology"
     },
     "ru": {
-        "page_title": "Визуализация Чакр и Биополя",
-        "app_title": "Визуализация Энергии Чакр и Биополя",
-        "app_intro": "Это приложение визуализирует ваши чакры и биополе на основе энергетических параметров. Отрегулируйте ползунки, чтобы увидеть, как разные уровни энергии влияют на визуализацию.",
-        "param_header": "Энергетические Параметры Чакр",
-        "param_desc": "Отрегулируйте уровень энергии для каждой чакры (0-100%):",
+        "page_title": "Энерго-Визуал",
+        "app_title": "Энерго-Визуал",
+        "app_intro": "Приложение для отображения результатов психо-энергетической диагностики энергоцентров и биополя. Разработано в НИЦ Инициологии и трансперсональной психологии. Автор и создатель приложения В. П. Лазаренко. Предназначено для профессиональных экстрасенсов. Рекомендовано для проведения диагностики начиная с 1 ступени Инициологии по методу психического видения, биолокации по 100% шкале. Данные диагностики необходимо установить в настройках приложения для получения оригинального изображения чакр и биополя в соответствии с результатами диагностики.",
+        "param_header": "Параметры Энергоцентров",
+        "param_desc": "Отрегулируйте уровень энергии для каждого энергоцентра (0-100%):",
         "energy_suffix": "Энергия",
         "reset_button": "Сбросить Все до 100%",
-        "visual_header": "Визуализация Чакр и Биополя",
+        "visual_header": "Визуализация Энергии и Биополя",
         "view_mode": "Режим Визуализации",
         "view_2d": "2D Вид",
         "view_3d": "3D Вид",
@@ -190,6 +190,6 @@ app_text = {
         "balanced_qualities": "Качества при Балансе",
         "imbalanced_signs": "Признаки Дисбаланса",
         "healing_practices": "Практики для Исцеления",
-        "footer": "Создано с ❤️ для холистической энергетической визуализации"
+        "footer": "Разработано в НИЦ Инициологии и трансперсональной психологии"
     }
 }
