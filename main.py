@@ -38,10 +38,10 @@ with st.sidebar:
     # Update language based on selection
     if lang_option == "English" and st.session_state.language != 'en':
         st.session_state.language = 'en'
-        st.experimental_rerun()
+        st.rerun()
     elif lang_option == "Русский" and st.session_state.language != 'ru':
         st.session_state.language = 'ru'
-        st.experimental_rerun()
+        st.rerun()
 
 # Page title and introduction
 st.title(get_text("app_title"))
@@ -91,7 +91,7 @@ with col1:
         for chakra in chakra_data:
             chakra_name = chakra['name']
             st.session_state.energy_values[chakra_name] = 100
-        st.experimental_rerun()
+        st.rerun()
 
 with col2:
     st.header(get_text("visual_header"))
