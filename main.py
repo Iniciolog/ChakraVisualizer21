@@ -24,7 +24,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
-        'About': None  # Удаляем пункт About из меню
+        'About': """
+        ### Энерго-Визуал
+        **Разработано в НИЦ Инициологии и трансперсональной психологии**
+        
+        Streamlit v1.43.1
+        """
     }
 )
 

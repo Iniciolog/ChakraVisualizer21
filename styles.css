@@ -183,3 +183,21 @@ footer {
 [style*="background:white"] {
     background-color: var(--background-color) !important;
 }
+
+/* About dialog styling */
+[data-baseweb="modal"] {
+    background-color: var(--secondary-bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+[data-baseweb="modal"] h3,
+[data-baseweb="modal"] p,
+[data-baseweb="modal"] div,
+[data-baseweb="modal"] span {
+    color: var(--text-color) !important;
+}
+
+/* Dialog background overlay */
+[data-baseweb="modal"] + div {
+    background-color: rgba(0, 0, 0, 0.7) !important;
+}
