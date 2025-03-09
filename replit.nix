@@ -1,6 +1,5 @@
 {pkgs}: {
   deps = [
-    pkgs.ffmpeg
     pkgs.tk
     pkgs.tcl
     pkgs.qhull

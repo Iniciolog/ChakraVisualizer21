@@ -1,70 +1,3 @@
-# Sound information for each chakra
-chakra_sounds = {
-    "Root": {
-        "frequency": 256,  # C
-        "note": "C",
-        "note_ru": "До",
-        "effects": "Grounding, security, stability",
-        "effects_ru": "Заземление, безопасность, стабильность",
-        "description": "The root chakra sound resonates with the physical foundation of our being and provides a sense of security and belonging.",
-        "description_ru": "Звук корневой чакры резонирует с физической основой нашего существа и дает ощущение безопасности и принадлежности."
-    },
-    "Sacral": {
-        "frequency": 288,  # D
-        "note": "D", 
-        "note_ru": "Ре",
-        "effects": "Creativity, emotional balance, sensuality",
-        "effects_ru": "Творчество, эмоциональный баланс, чувственность",
-        "description": "The sacral chakra sound enhances creativity and emotional fluidity, helping to release emotional blockages.",
-        "description_ru": "Звук сакральной чакры усиливает творчество и эмоциональную текучесть, помогая высвободить эмоциональные блоки."
-    },
-    "Solar Plexus": {
-        "frequency": 320,  # E
-        "note": "E",
-        "note_ru": "Ми",
-        "effects": "Personal power, confidence, self-esteem",
-        "effects_ru": "Личная сила, уверенность, самооценка",
-        "description": "The solar plexus sound activates your personal power center, boosting confidence and strengthening your sense of self.",
-        "description_ru": "Звук солнечного сплетения активирует ваш центр личной силы, повышая уверенность и укрепляя ваше чувство себя."
-    },
-    "Heart": {
-        "frequency": 341,  # F
-        "note": "F",
-        "note_ru": "Фа",
-        "effects": "Love, compassion, healing",
-        "effects_ru": "Любовь, сострадание, исцеление",
-        "description": "The heart chakra sound opens your capacity for love and compassion, healing emotional wounds and fostering connection.",
-        "description_ru": "Звук сердечной чакры открывает вашу способность к любви и состраданию, исцеляя эмоциональные раны и способствуя установлению связи."
-    },
-    "Throat": {
-        "frequency": 384,  # G
-        "note": "G",
-        "note_ru": "Соль",
-        "effects": "Communication, self-expression, truth",
-        "effects_ru": "Общение, самовыражение, правда",
-        "description": "The throat chakra sound empowers clear communication and authentic self-expression, helping you speak your truth.",
-        "description_ru": "Звук горловой чакры дает силу ясному общению и аутентичному самовыражению, помогая говорить вашу правду."
-    },
-    "Third Eye": {
-        "frequency": 426,  # A
-        "note": "A",
-        "note_ru": "Ля",
-        "effects": "Intuition, insight, clarity",
-        "effects_ru": "Интуиция, проницательность, ясность",
-        "description": "The third eye sound enhances intuition and perception, clearing mental fog and illuminating inner wisdom.",
-        "description_ru": "Звук третьего глаза усиливает интуицию и восприятие, рассеивая ментальный туман и освещая внутреннюю мудрость."
-    },
-    "Crown": {
-        "frequency": 480,  # B
-        "note": "B",
-        "note_ru": "Си",
-        "effects": "Spiritual connection, consciousness, unity",
-        "effects_ru": "Духовная связь, сознание, единство",
-        "description": "The crown chakra sound facilitates connection with higher consciousness and universal energy, promoting a sense of unity and oneness.",
-        "description_ru": "Звук коронной чакры способствует связи с высшим сознанием и вселенской энергией, способствуя ощущению единства и целостности."
-    }
-}
-
 # Chakra data information
 chakra_data = [
     {
@@ -230,15 +163,6 @@ app_text = {
         "view_2d": "2D View",
         "view_3d": "3D View",
         "view_3d_help": "3D visualization allows you to rotate and zoom for a more immersive experience",
-        "sound_header": "Chakra Sound Ambiance",
-        "sound_intro": "Chakras have associated sound frequencies that can help with balancing and healing. Click on a chakra to experience its unique vibration.",
-        "sound_play": "Play Sound",
-        "sound_stop": "Stop Sound",
-        "sound_note": "Musical Note",
-        "sound_frequency": "Frequency",
-        "sound_effects": "Effects",
-        "sound_description": "Description",
-        "sound_volume": "Volume",
         "info_header": "Chakra Information",
         "info_intro": "Understanding your chakras can help you identify energy imbalances and areas for personal growth. Below is detailed information about each chakra.",
         "location": "Location",
@@ -248,7 +172,7 @@ app_text = {
         "balanced_qualities": "Balanced Qualities",
         "imbalanced_signs": "Imbalanced Signs", 
         "healing_practices": "Healing Practices",
-        "footer": "Developed at the Research Center for Initiology and Transpersonal Psychology © 2025"
+        "footer": "Developed at the Research Center for Initiology and Transpersonal Psychology"
     },
     "ru": {
         "page_title": "AURA STUDIO",
@@ -269,15 +193,6 @@ app_text = {
         "view_2d": "2D Вид",
         "view_3d": "3D Вид",
         "view_3d_help": "3D визуализация позволяет вращать и масштабировать для более иммерсивного опыта",
-        "sound_header": "Звуковая Атмосфера Чакр",
-        "sound_intro": "Чакры имеют ассоциированные звуковые частоты, которые могут помочь с балансировкой и исцелением. Нажмите на чакру, чтобы услышать её уникальную вибрацию.",
-        "sound_play": "Включить Звук",
-        "sound_stop": "Выключить Звук",
-        "sound_note": "Музыкальная Нота",
-        "sound_frequency": "Частота",
-        "sound_effects": "Эффекты",
-        "sound_description": "Описание",
-        "sound_volume": "Громкость",
         "info_header": "Информация о Чакрах",
         "info_intro": "Понимание ваших чакр может помочь определить энергетические дисбалансы и области для личностного роста. Ниже представлена подробная информация о каждой чакре.",
         "location": "Расположение",
@@ -287,6 +202,6 @@ app_text = {
         "balanced_qualities": "Качества при Балансе",
         "imbalanced_signs": "Признаки Дисбаланса",
         "healing_practices": "Практики для Исцеления",
-        "footer": "Разработано в НИЦ Инициологии и трансперсональной психологии © 2025"
+        "footer": "Разработано в НИЦ Инициологии и трансперсональной психологии"
     }
 }
