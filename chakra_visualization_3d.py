@@ -26,27 +26,45 @@ def create_chakra_visualization_3d(energy_values, language='en'):
     # Add biofield/aura
     add_biofield_3d(fig, energy_values)
     
-    # Configure the layout with improved camera angle and aspect ratio
+    # Настройка макета с фиксированными параметрами для стабильного отображения
     fig.update_layout(
         scene = dict(
-            xaxis = dict(visible=False, range=[-2.5, 2.5]),  # Расширенный диапазон для отображения полного кокона
-            yaxis = dict(visible=False, range=[-2.5, 2.5]),  # Расширенный диапазон для отображения полного кокона
-            zaxis = dict(visible=False, range=[0, 8]),       # Увеличенный вертикальный диапазон
+            # Фиксированные значения осей для предотвращения масштабирования
+            xaxis = dict(visible=False, range=[-2.5, 2.5], autorange=False, fixedrange=True),
+            yaxis = dict(visible=False, range=[-2.5, 2.5], autorange=False, fixedrange=True),
+            zaxis = dict(visible=False, range=[0, 8], autorange=False, fixedrange=True),
             aspectmode='manual',
-            aspectratio=dict(x=1, y=1, z=2.0),               # Более естественное соотношение сторон
+            aspectratio=dict(x=1, y=1, z=2.0),
             camera=dict(
-                eye=dict(x=2.2, y=0, z=2.0),                 # Улучшенный угол обзора
+                eye=dict(x=2.2, y=0, z=2.0),
                 up=dict(x=0, y=0, z=1),
-                center=dict(x=0, y=0, z=3.5)                 # Центр сцены на середине биополя
-            )
+                center=dict(x=0, y=0, z=3.5),
+                projection=dict(type="orthographic")  # Использование ортографической проекции для стабильности
+            ),
+            dragmode=False  # Отключение режима перетаскивания для предотвращения нежелательных взаимодействий
         ),
-        margin=dict(l=0, r=0, b=0, t=0),
+        margin=dict(l=0, r=0, b=0, t=0, pad=0),  # Удаляем отступы
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         showlegend=False,
         template="plotly_dark",
-        # Увеличиваем высоту фигуры для лучшего отображения
-        height=700
+        height=900,  # Увеличенная фиксированная высота
+        width=1000,  # Фиксированная ширина
+        # Отключаем интерактивные события, которые могут вызывать изменение размера
+        dragmode=False,
+        hovermode=False,
+        # Конфигурация для отключения автомасштабирования
+        uirevision=False
+    )
+    
+    # Дополнительная конфигурация для отключения большинства элементов управления
+    fig.update_layout(
+        modebar=dict(
+            orientation='v',
+            bgcolor='rgba(0,0,0,0.3)',
+            color='white',
+            activecolor='white'
+        )
     )
     
     return fig

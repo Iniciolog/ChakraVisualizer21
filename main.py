@@ -215,21 +215,44 @@ with col2:
         fig = create_chakra_visualization(st.session_state.energy_values, st.session_state.language)
         st.pyplot(fig)
     else:  # 3D mode
-        # Добавляем CSS для увеличения размера контейнера и изображения 3D визуализации
+        # Добавляем CSS для фиксации размера контейнера и предотвращения изменения размеров
         st.markdown("""
         <style>
         .stPlotlyChart {
             height: 850px !important;
+            width: 100% !important;
+            min-height: 850px !important;
         }
         iframe {
+            min-height: 800px !important;
+            height: 800px !important;
+        }
+        /* Отключаем изменение размеров при наведении и событиях курсора */
+        .js-plotly-plot, .plot-container, .svg-container {
+            width: 100% !important;
+            height: 100% !important;
             min-height: 800px !important;
         }
         </style>
         """, unsafe_allow_html=True)
         
-        # Создаем 3D визуализацию с увеличенной высотой
+        # Создаем 3D визуализацию с фиксированными параметрами размера
         fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
-        st.plotly_chart(fig_3d, use_container_width=True, height=900)
+        
+        # Конфигурация Plotly для отключения интерактивных функций
+        config = {
+            'displayModeBar': False,      # Скрыть панель инструментов
+            'scrollZoom': False,          # Отключить масштабирование при прокрутке
+            'responsive': False,          # Отключить изменение размера при изменении размера окна
+            'staticPlot': True,           # Полностью статичный график без интерактивности
+            'doubleClick': False,         # Отключить двойной щелчок для авто-масштабирования
+            'showTips': False,            # Отключить советы при наведении
+            'displaylogo': False,         # Отключить логотип Plotly
+            'modeBarButtonsToRemove': ['zoom', 'pan', 'select', 'lasso', 'resetScale', 'autoScale']
+        }
+        
+        # Используем фиксированные размеры и отключаем автоматическое масштабирование
+        st.plotly_chart(fig_3d, use_container_width=False, height=900, width=1000, config=config)
 
 # Detailed information section
 st.header(get_text("info_header"))
