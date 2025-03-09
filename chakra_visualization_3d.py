@@ -30,18 +30,18 @@ def create_chakra_visualization_3d(energy_values, language='en'):
     fig.update_layout(
         scene = dict(
             # Фиксированные значения осей для предотвращения масштабирования
-            xaxis = dict(visible=False, range=[-2.5, 2.5], autorange=False, fixedrange=True),
-            yaxis = dict(visible=False, range=[-2.5, 2.5], autorange=False, fixedrange=True),
-            zaxis = dict(visible=False, range=[0, 8], autorange=False, fixedrange=True),
+            xaxis = dict(visible=False, range=[-2.5, 2.5], autorange=False),
+            yaxis = dict(visible=False, range=[-2.5, 2.5], autorange=False),
+            zaxis = dict(visible=False, range=[0, 8], autorange=False),
             aspectmode='manual',
             aspectratio=dict(x=1, y=1, z=2.0),
             camera=dict(
                 eye=dict(x=2.2, y=0, z=2.0),
                 up=dict(x=0, y=0, z=1),
                 center=dict(x=0, y=0, z=3.5),
-                projection=dict(type="orthographic")  # Использование ортографической проекции для стабильности
+                projection=dict(type="perspective")  # Возвращаем перспективу, так как ортографическая может не поддерживаться
             ),
-            dragmode=False  # Отключение режима перетаскивания для предотвращения нежелательных взаимодействий
+            dragmode="turntable"  # Позволяем только вращение, но ограничиваем масштабирование
         ),
         margin=dict(l=0, r=0, b=0, t=0, pad=0),  # Удаляем отступы
         paper_bgcolor='rgba(0,0,0,0)',
@@ -50,8 +50,7 @@ def create_chakra_visualization_3d(energy_values, language='en'):
         template="plotly_dark",
         height=900,  # Увеличенная фиксированная высота
         width=1000,  # Фиксированная ширина
-        # Отключаем интерактивные события, которые могут вызывать изменение размера
-        dragmode=False,
+        # Отключаем некоторые интерактивные события
         hovermode=False,
         # Конфигурация для отключения автомасштабирования
         uirevision=False
