@@ -16,8 +16,8 @@ def create_chakra_visualization(energy_values, language='en'):
     Returns:
     matplotlib.figure.Figure: Figure containing the visualization
     """
-    # Create the figure and axis
-    fig, ax = plt.subplots(figsize=(10, 15), facecolor='black')
+    # Create the figure and axis with larger size for more space
+    fig, ax = plt.subplots(figsize=(12, 18), facecolor='black')
     
     # Draw the human silhouette
     draw_silhouette(ax)
@@ -28,10 +28,10 @@ def create_chakra_visualization(energy_values, language='en'):
     # Draw the aura/biofield
     draw_biofield(ax, energy_values)
     
-    # Configure the axis
+    # Configure the axis with expanded viewing area for full biofield
     ax.set_aspect('equal')
-    ax.set_xlim(-2.5, 2.5)
-    ax.set_ylim(-1, 8)
+    ax.set_xlim(-4.0, 4.0)  # Расширенные границы по горизонтали
+    ax.set_ylim(-2.0, 9.0)  # Расширенные границы по вертикали
     ax.axis('off')
     
     plt.tight_layout()
