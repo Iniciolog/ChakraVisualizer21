@@ -3,8 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from chakra_visualization import create_chakra_visualization
 from chakra_visualization_3d import create_chakra_visualization_3d
-from assets.chakra_info import chakra_data, app_text
+from assets.chakra_info import chakra_data, chakra_sounds, app_text
 import utils
+import sound_utils
 
 # Initialize session state for language and view mode
 if 'language' not in st.session_state:
@@ -225,6 +226,129 @@ with col2:
     else:  # 3D mode
         fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
         st.plotly_chart(fig_3d, use_container_width=True, height=700)
+
+# Sound ambiance section
+st.header(get_text("sound_header"))
+st.markdown(get_text("sound_intro"))
+
+# Setup sound system
+sound_setup_html = sound_utils.inject_sound_setup()
+st.markdown(sound_setup_html, unsafe_allow_html=True)
+
+# Create two columns for chakra sound interface
+sound_col1, sound_col2 = st.columns([1, 1])
+
+with sound_col1:
+    # Dropdowns for selecting chakra sound
+    selected_chakra = st.selectbox(
+        "Chakra",
+        [chakra["name_ru"] if st.session_state.language == 'ru' else chakra["name"] for chakra in chakra_data]
+    )
+    
+    # Convert selected chakra name to English for internal use
+    selected_chakra_en = selected_chakra
+    for chakra in chakra_data:
+        if st.session_state.language == 'ru' and chakra["name_ru"] == selected_chakra:
+            selected_chakra_en = chakra["name"]
+            break
+    
+    # Get sound information for the selected chakra
+    sound_info = chakra_sounds[selected_chakra_en]
+    
+    # Display sound information
+    note_display = sound_info["note_ru"] if st.session_state.language == 'ru' else sound_info["note"]
+    effects_display = sound_info["effects_ru"] if st.session_state.language == 'ru' else sound_info["effects"]
+    description_display = sound_info["description_ru"] if st.session_state.language == 'ru' else sound_info["description"]
+    
+    st.markdown(f"""
+    **{get_text("sound_note")}**: {note_display}
+    
+    **{get_text("sound_frequency")}**: {sound_info["frequency"]} Hz
+    
+    **{get_text("sound_effects")}**: {effects_display}
+    
+    **{get_text("sound_description")}**: {description_display}
+    """)
+    
+    # Volume control slider
+    volume = st.slider(
+        get_text("sound_volume"),
+        min_value=0.0,
+        max_value=1.0,
+        value=0.5,
+        step=0.1
+    )
+    
+    # Play and stop buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button(get_text("sound_play"), type="primary"):
+            # JavaScript to control sound playback
+            st.markdown(
+                f"""
+                <script>
+                    // Using a timeout to ensure the DOM is ready
+                    setTimeout(function() {{
+                        controlChakraSounds('{selected_chakra_en}', 'play');
+                        controlChakraSounds('{selected_chakra_en}', 'setVolume', {volume});
+                    }}, 500);
+                </script>
+                """,
+                unsafe_allow_html=True
+            )
+    with col2:
+        if st.button(get_text("sound_stop")):
+            # JavaScript to stop sound playback
+            st.markdown(
+                """
+                <script>
+                    // Using a timeout to ensure the DOM is ready
+                    setTimeout(function() {
+                        stopAllChakraSounds();
+                    }, 500);
+                </script>
+                """,
+                unsafe_allow_html=True
+            )
+
+with sound_col2:
+    # Display a chakra wheel with clickable chakras
+    # We'll use a simplified approach with colored circles
+    for i, chakra in enumerate(chakra_data):
+        chakra_name = chakra["name"]
+        chakra_name_display = chakra["name_ru"] if st.session_state.language == 'ru' else chakra["name"]
+        color_hex = chakra["color_hex"]
+        
+        # Position the chakras from bottom to top
+        st.markdown(
+            f"""
+            <div 
+                style="
+                    background-color: {color_hex}; 
+                    width: 60px; 
+                    height: 60px; 
+                    border-radius: 50%; 
+                    margin: 10px auto;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: bold;
+                    cursor: pointer;
+                    text-align: center;
+                    box-shadow: 0 0 10px rgba(255,255,255,0.3);
+                "
+                onclick="controlChakraSounds('{chakra_name}', 'play'); controlChakraSounds('{chakra_name}', 'setVolume', {volume});"
+            >
+                {i+1}
+            </div>
+            <div style="text-align: center; margin-bottom: 15px;">{chakra_name_display}</div>
+            """,
+            unsafe_allow_html=True
+        )
+
+# Divider
+st.markdown("---")
 
 # Detailed information section
 st.header(get_text("info_header"))
