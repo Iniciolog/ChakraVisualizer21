@@ -130,37 +130,166 @@ def add_chakras_3d(fig, energy_values, language='en'):
                 ))
 
 def add_biofield_3d(fig, energy_values):
-    """Add biofield/aura visualization in 3D"""
+    """Add enhanced biofield/aura visualization in 3D with distortions for weak chakras"""
     # Calculate average energy
     avg_energy = sum(energy_values.values()) / len(energy_values)
     avg_energy_pct = avg_energy / 100.0
     
-    # Generate points for a spheroid shape
-    u = np.linspace(0, 2 * np.pi, 40)
-    v = np.linspace(0, np.pi, 30)
+    # Generate points for a spheroid shape with higher resolution for more details
+    u = np.linspace(0, 2 * np.pi, 50)  # Increased from 40 to 50
+    v = np.linspace(0, np.pi, 40)      # Increased from 30 to 40
     
-    # Create multiple layers of the aura
-    layers = 5
+    # Create more layers of the aura for a richer effect
+    layers = 8  # Increased from 5 to 8
+    
+    # Identify weak chakras for distortion effects
+    weak_chakras = {name: energy for name, energy in energy_values.items() if energy < 30}
+    moderately_weak_chakras = {name: energy for name, energy in energy_values.items() if 30 <= energy < 50}
+    
+    # Define chakra positions for distortion mapping
+    chakra_positions = {
+        "Root": (0, 0, 1.8),
+        "Sacral": (0, 0, 2.6),
+        "Solar Plexus": (0, 0, 3.4),
+        "Heart": (0, 0, 4.2),
+        "Throat": (0, 0, 5.0),
+        "Third Eye": (0, 0, 5.8),
+        "Crown": (0, 0, 6.6)
+    }
+    
+    # For each layer of the aura
     for i in range(layers):
-        # Scale based on the layer
-        scale = 1 - (i / layers) * 0.7
-        opacity = 0.15 * scale * avg_energy_pct
+        # Scale based on the layer with more dramatic progression
+        scale = 1 - (i / layers) * 0.6  # Less falloff for outer layers
         
-        # Base dimensions
-        x_scale = 1.0 * (1 + i*0.3) * (0.7 + avg_energy_pct * 0.5)
-        y_scale = 1.0 * (1 + i*0.3) * (0.7 + avg_energy_pct * 0.5)
-        z_scale = 3.5 * (1 + i*0.2) * (0.7 + avg_energy_pct * 0.5)
+        # Higher opacity for more saturation
+        opacity = 0.22 * scale * avg_energy_pct
         
-        # Calculate the blended color for this layer
+        # Larger base dimensions for more dramatic field
+        x_scale = 1.2 * (1 + i*0.35) * (0.7 + avg_energy_pct * 0.6)  # Increased width
+        y_scale = 1.2 * (1 + i*0.35) * (0.7 + avg_energy_pct * 0.6)  # Increased depth
+        z_scale = 4.0 * (1 + i*0.25) * (0.7 + avg_energy_pct * 0.6)  # Increased height
+        
+        # Calculate the blended color for this layer with enhanced intensity
         blended_color = calculate_layer_color(energy_values, i, layers)
+        
+        # More saturation for high energy
+        if avg_energy > 70:
+            # Boost color saturation for high energy biofields
+            blended_color = [min(255, c * 1.3) for c in blended_color]
+        
         color_str = f'rgb({blended_color[0]}, {blended_color[1]}, {blended_color[2]})'
         
-        # Generate the spheroid coordinates
-        x = x_scale * np.outer(np.cos(u), np.sin(v))
-        y = y_scale * np.outer(np.sin(u), np.sin(v))
-        z = z_scale * np.outer(np.ones(np.size(u)), np.cos(v)) + 3.5  # Centered on the spine
+        # Generate the base spheroid coordinates
+        x_base = x_scale * np.outer(np.cos(u), np.sin(v))
+        y_base = y_scale * np.outer(np.sin(u), np.sin(v))
+        z_base = z_scale * np.outer(np.ones(np.size(u)), np.cos(v)) + 3.5  # Centered on the spine
         
-        # Add the aura layer
+        # Copy the base coordinates for modification
+        x = np.copy(x_base)
+        y = np.copy(y_base)
+        z = np.copy(z_base)
+        
+        # Apply distortions for weak chakras (holes and deformations)
+        if weak_chakras and i < layers-2:
+            for name, energy in weak_chakras.items():
+                # Get chakra position
+                chakra_pos = chakra_positions[name]
+                
+                # Distortion strength increases as energy decreases
+                distortion_strength = (30 - energy) / 30 * 1.5
+                
+                # Create hole-like effect by pushing points inward near the weak chakra
+                for i_u in range(len(u)):
+                    for i_v in range(len(v)):
+                        # Calculate distance from this point to the chakra
+                        dx = x[i_u, i_v] - chakra_pos[0]
+                        dy = y[i_u, i_v] - chakra_pos[1]
+                        dz = z[i_u, i_v] - chakra_pos[2]
+                        distance = np.sqrt(dx**2 + dy**2 + dz**2)
+                        
+                        # Apply distortion if point is close to the chakra
+                        if distance < 1.5:
+                            # Calculate falloff based on distance (stronger effect closer to chakra)
+                            falloff = (1.5 - distance) / 1.5
+                            
+                            # Create inward depression (hole effect)
+                            direction_x = (x[i_u, i_v] - chakra_pos[0]) / (distance + 0.001)
+                            direction_y = (y[i_u, i_v] - chakra_pos[1]) / (distance + 0.001)
+                            direction_z = (z[i_u, i_v] - chakra_pos[2]) / (distance + 0.001)
+                            
+                            # Push points inward more dramatically for weak chakras
+                            x[i_u, i_v] -= direction_x * falloff * distortion_strength * 0.5
+                            y[i_u, i_v] -= direction_y * falloff * distortion_strength * 0.5
+                            z[i_u, i_v] -= direction_z * falloff * distortion_strength * 0.5
+            
+            # Add visible "holes" for very weak chakras
+            for name, energy in weak_chakras.items():
+                if energy < 15:  # Very weak chakras get visible holes
+                    chakra_pos = chakra_positions[name]
+                    hole_size = (15 - energy) / 15 * 0.3
+                    
+                    # Create a small dark sphere to represent the hole
+                    theta = np.linspace(0, 2*np.pi, 20)
+                    phi = np.linspace(0, np.pi, 15)
+                    
+                    # Hole coordinates
+                    hole_x = chakra_pos[0] + hole_size * np.outer(np.cos(theta), np.sin(phi))
+                    hole_y = chakra_pos[1] + hole_size * np.outer(np.sin(theta), np.sin(phi))
+                    hole_z = chakra_pos[2] + hole_size * np.outer(np.ones(np.size(theta)), np.cos(phi))
+                    
+                    # Add the hole
+                    fig.add_trace(go.Surface(
+                        x=hole_x, y=hole_y, z=hole_z,
+                        surfacecolor=np.ones(hole_x.shape),
+                        colorscale=[[0, 'rgb(0,0,0)'], [1, 'rgb(0,0,0)']],  # Black hole
+                        showscale=False,
+                        opacity=0.9,
+                        hoverinfo='none'
+                    ))
+        
+        # Apply "dirty" patchy effects for moderately weak chakras
+        if moderately_weak_chakras and i < layers-1:
+            # Add noise/turbulence to the biofield surface
+            for name, energy in moderately_weak_chakras.items():
+                chakra_pos = chakra_positions[name]
+                
+                # Calculate distortion based on energy level
+                distortion_intensity = (50 - energy) / 20 * 0.2
+                
+                # Add noise to surface points near the chakra
+                for i_u in range(len(u)):
+                    for i_v in range(len(v)):
+                        # Calculate distance from this point to the chakra
+                        dx = x[i_u, i_v] - chakra_pos[0]
+                        dy = y[i_u, i_v] - chakra_pos[1]
+                        dz = z[i_u, i_v] - chakra_pos[2]
+                        distance = np.sqrt(dx**2 + dy**2 + dz**2)
+                        
+                        # Apply noise if point is in range
+                        if distance < 2.0:
+                            # Stronger effect closer to chakra
+                            falloff = (2.0 - distance) / 2.0
+                            
+                            # Add random noise to create "dirty" appearance
+                            x[i_u, i_v] += np.random.normal(0, distortion_intensity) * falloff
+                            y[i_u, i_v] += np.random.normal(0, distortion_intensity) * falloff
+                            z[i_u, i_v] += np.random.normal(0, distortion_intensity) * falloff
+        
+        # If overall energy is low, make the entire aura appear more turbulent
+        if avg_energy < 50:
+            # Apply global distortion to the entire field
+            distortion = (50 - avg_energy) / 50 * 0.15
+            
+            # Add noise to entire surface for a turbulent appearance
+            x += np.random.normal(0, distortion, x.shape)
+            y += np.random.normal(0, distortion, y.shape)
+            z += np.random.normal(0, distortion, z.shape)
+            
+            # Also make the color more murky/dull for low energy
+            opacity *= 1.2  # Boost opacity to make the murkiness more visible
+        
+        # Add the aura layer with enhanced appearance
         fig.add_trace(go.Surface(
             x=x, y=y, z=z,
             surfacecolor=np.ones(x.shape),  # Uniform color
@@ -169,31 +298,79 @@ def add_biofield_3d(fig, energy_values):
             opacity=opacity,
             hoverinfo='none'
         ))
+        
+        # Add extra glow layer for high energy biofields
+        if avg_energy > 70 and i < 3:
+            # Create a slightly larger, more transparent layer for glow effect
+            glow_x = x_base * 1.05
+            glow_y = y_base * 1.05
+            glow_z = z_base * 1.05
+            
+            fig.add_trace(go.Surface(
+                x=glow_x, y=glow_y, z=glow_z,
+                surfacecolor=np.ones(glow_x.shape),
+                colorscale=[[0, color_str], [1, color_str]],
+                showscale=False,
+                opacity=opacity * 0.6,  # More transparent for glow effect
+                hoverinfo='none'
+            ))
 
 def calculate_layer_color(energy_values, layer_index, total_layers):
-    """Calculate blended color for an aura layer based on chakras' energy levels"""
+    """Calculate enhanced blended color for an aura layer with more dramatic transitions"""
     blended_color = [0, 0, 0]
     weight_sum = 0
+    
+    # Define relative positions of chakras (0 to 1, bottom to top)
+    chakra_position_map = {"Root": 0, "Sacral": 0.16, "Solar Plexus": 0.33, 
+                           "Heart": 0.5, "Throat": 0.67, "Third Eye": 0.84, "Crown": 1.0}
+    
+    # Calculate where this layer is in the vertical space (0 to 1)
+    layer_rel_position = layer_index / (total_layers - 1) if total_layers > 1 else 0.5
+    
+    # First pass - get the total energy for normalization
+    total_energy = sum(energy_values.values())
+    avg_energy = total_energy / len(energy_values)
+    
+    # The energy contrast factor makes differences between energy levels more pronounced
+    # Lower average energy = higher contrast between chakras
+    energy_contrast = 1.5 if avg_energy > 70 else 2.0 if avg_energy > 50 else 2.5
     
     for chakra in chakra_data:
         name = chakra["name"]
         base_color = chakra["color_rgb"]
         energy = energy_values[name] / 100.0
         
-        # Define relative positions of chakras (0 to 1, bottom to top)
-        chakra_position = {"Root": 0, "Sacral": 0.16, "Solar Plexus": 0.33, 
-                           "Heart": 0.5, "Throat": 0.67, "Third Eye": 0.84, "Crown": 1.0}
+        # Create more dramatic vertical banding by using exponential falloff
+        vertical_distance = abs(chakra_position_map[name] - layer_rel_position)
         
-        # Calculate where this layer is in the vertical space (0 to 1)
-        layer_rel_position = layer_index / (total_layers - 1) if total_layers > 1 else 0.5
+        # Sharper falloff for more dramatic color transitions between chakra regions
+        proximity = 1 - min(vertical_distance * 3.0, 1) ** 1.5  # Exponential falloff for sharper bands
         
-        # Weight is based on proximity in vertical space and energy level
-        proximity = 1 - min(abs(chakra_position[name] - layer_rel_position) * 2.5, 1)
-        weight = energy * proximity
+        # Enhanced weighting that makes energy differences more apparent
+        # Higher energy chakras have disproportionately greater influence
+        weight = (energy ** energy_contrast) * proximity
         weight_sum += weight
         
-        # Adjust color based on energy level
+        # Get adjusted color with more saturation for higher energy values
         adjusted_color = utils.calculate_chakra_color(base_color, energy)
+        
+        # Enhance color saturation and brightness for high-energy chakras
+        if energy > 0.7:
+            # Boost colors for high energy chakras
+            saturation_boost = 1.0 + ((energy - 0.7) / 0.3) * 0.4  # Up to 40% boost at 100% energy
+            adjusted_color = [min(255, c * saturation_boost) for c in adjusted_color]
+        
+        # For very low energy chakras (<30%), desaturate the colors
+        elif energy < 0.3:
+            # Calculate average brightness for grayscale conversion
+            desat_factor = (0.3 - energy) / 0.3 * 0.7  # Up to 70% desaturation at 0% energy
+            avg_brightness = sum(adjusted_color) / 3
+            
+            # Blend between color and grayscale based on desaturation factor
+            adjusted_color = [
+                c * (1 - desat_factor) + avg_brightness * desat_factor 
+                for c in adjusted_color
+            ]
         
         # Accumulate weighted color
         blended_color[0] += adjusted_color[0] * weight
@@ -205,5 +382,17 @@ def calculate_layer_color(energy_values, layer_index, total_layers):
         blended_color = [int(c / weight_sum) for c in blended_color]
     else:
         blended_color = [0, 0, 0]  # Default to black if no energy
+    
+    # Apply global color adjustments based on average energy
+    if avg_energy < 50:
+        # For low overall energy, shift colors toward "murkier" tones
+        murky_factor = (50 - avg_energy) / 50 * 0.4  # Up to 40% shift at 0% energy
+        
+        # Reduce brightness and shift toward muddy tones
+        murky_tone = [30, 20, 40]  # Dirty, dark purplish tone
+        blended_color = [
+            int(c * (1 - murky_factor) + murky_tone[i] * murky_factor)
+            for i, c in enumerate(blended_color)
+        ]
     
     return blended_color
