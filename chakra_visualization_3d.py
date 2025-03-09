@@ -93,38 +93,39 @@ def add_chakras_3d(fig, energy_values, language='en'):
         color = utils.calculate_chakra_color(base_color, energy)
         color_str = f'rgb({color[0]}, {color[1]}, {color[2]})'
         
-        # Size depends on energy
-        size = 0.2 + (0.15 * energy)
+        # Увеличиваем размер чакр для лучшей видимости
+        size = 0.4 + (0.2 * energy)  # Увеличенные размеры чакр (было 0.2 + 0.15)
         
         # Create hover text with chakra information
         hover_text = f"{name_display} ({sanskrit_name_display})<br>{location_display}<br>Energy: {energy_values[name]}%"
         
-        # Add chakra sphere
+        # Add chakra sphere with increased size
         fig.add_trace(go.Scatter3d(
             x=[position[0]], y=[position[1]], z=[position[2]],
             mode='markers',
             marker=dict(
-                size=size*50,  # Scaled for 3D view
+                size=size*70,  # Увеличенный масштаб для 3D вида (было 50)
                 color=color_str,
-                opacity=0.8,
+                opacity=0.85,  # Увеличена непрозрачность для лучшей видимости
                 symbol='circle',
-                line=dict(color='white', width=1)
+                line=dict(color='white', width=1.5)  # Более заметная белая граница
             ),
             text=hover_text,
             hoverinfo='text'
         ))
         
-        # For high energy chakras (>70%), add pulsating effect using transparent spheres
+        # Для чакр с высокой энергией (>70%), добавляем усиленный пульсирующий эффект
         if energy > 0.7:
             for i in range(1, 4):
-                scale = 1 + (i * 0.4)
-                opacity = 0.3 - (i * 0.07)
+                # Увеличены параметры для более заметного эффекта свечения
+                scale = 1 + (i * 0.5)  # Увеличен множитель расширения (было 0.4)
+                opacity = 0.35 - (i * 0.08)  # Увеличена базовая непрозрачность свечения
                 
                 fig.add_trace(go.Scatter3d(
                     x=[position[0]], y=[position[1]], z=[position[2]],
                     mode='markers',
                     marker=dict(
-                        size=size*50*scale,
+                        size=size*70*scale,  # Увеличено до 70 (было 50)
                         color=color_str,
                         opacity=opacity,
                         symbol='circle'
@@ -142,8 +143,8 @@ def add_biofield_3d(fig, energy_values):
     u = np.linspace(0, 2 * np.pi, 60)  # Увеличено до 60 для более гладкой формы
     v = np.linspace(0, np.pi, 50)      # Увеличено до 50 для более гладкой формы
     
-    # Увеличиваем количество слоев ауры для более богатого эффекта
-    layers = 10  # Увеличено до 10 для более плавных переходов цвета и объема
+    # Уменьшаем количество слоев ауры для более естественного вида
+    layers = 6  # Уменьшено до 6 для более естественного вида (было 10)
     
     # Identify weak chakras for distortion effects
     weak_chakras = {name: energy for name, energy in energy_values.items() if energy < 30}
