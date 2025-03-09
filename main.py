@@ -215,22 +215,28 @@ with col2:
         fig = create_chakra_visualization(st.session_state.energy_values, st.session_state.language)
         st.pyplot(fig)
     else:  # 3D mode
-        # Специальный CSS для фиксированного размещения 3D визуализации
-        st.markdown("""
+        # Создаем контейнер с фиксированными размерами для 3D визуализации
+        container = st.container()
+        
+        # Настраиваем CSS для точного расположения элемента в центре
+        container.markdown("""
         <style>
-        .stPlotlyChart {
-            height: 700px !important;
-            width: 700px !important;
+        .stPlotlyChart, .js-plotly-plot, .plot-container {
+            display: block !important;
             margin: 0 auto !important;
-            padding: 0 !important;
+            width: 700px !important;
+            height: 700px !important;
         }
         iframe {
+            width: 100% !important;
             height: 700px !important;
-            width: 700px !important;
-            margin: 0 auto !important;
-            padding: 0 !important;
             border: none !important;
-            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .main .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -238,16 +244,17 @@ with col2:
         # Создаем 3D визуализацию
         fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
         
-        # Отображаем 3D визуализацию с фиксированным размером и отключенной интерактивностью
-        st.plotly_chart(
-            fig_3d, 
-            use_container_width=False,
-            config={
-                'displayModeBar': False,
-                'staticPlot': True,
-                'responsive': False
-            }
-        )
+        # Отображаем 3D визуализацию с полностью отключенными интерактивными элементами
+        with container:
+            st.plotly_chart(
+                fig_3d, 
+                use_container_width=False,
+                config={
+                    'displayModeBar': False,
+                    'staticPlot': True,  # Полностью отключает интерактивность
+                    'responsive': False
+                }
+            )
 
 # Detailed information section
 st.header(get_text("info_header"))
