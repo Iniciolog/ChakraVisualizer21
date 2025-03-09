@@ -26,44 +26,26 @@ def create_chakra_visualization_3d(energy_values, language='en'):
     # Add biofield/aura
     add_biofield_3d(fig, energy_values)
     
-    # Настройка макета с фиксированными параметрами для стабильного отображения
+    # Базовая конфигурация с проверенными параметрами
     fig.update_layout(
         scene = dict(
-            # Фиксированные значения осей для предотвращения масштабирования
-            xaxis = dict(visible=False, range=[-2.5, 2.5], autorange=False),
-            yaxis = dict(visible=False, range=[-2.5, 2.5], autorange=False),
-            zaxis = dict(visible=False, range=[0, 8], autorange=False),
+            xaxis = dict(visible=False, range=[-2.5, 2.5]),
+            yaxis = dict(visible=False, range=[-2.5, 2.5]),
+            zaxis = dict(visible=False, range=[0, 8]),
             aspectmode='manual',
             aspectratio=dict(x=1, y=1, z=2.0),
             camera=dict(
                 eye=dict(x=2.2, y=0, z=2.0),
                 up=dict(x=0, y=0, z=1),
-                center=dict(x=0, y=0, z=3.5),
-                projection=dict(type="perspective")  # Возвращаем перспективу, так как ортографическая может не поддерживаться
-            ),
-            dragmode="turntable"  # Позволяем только вращение, но ограничиваем масштабирование
+                center=dict(x=0, y=0, z=3.5)
+            )
         ),
-        margin=dict(l=0, r=0, b=0, t=0, pad=0),  # Удаляем отступы
+        margin=dict(l=0, r=0, b=0, t=0),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         showlegend=False,
         template="plotly_dark",
-        height=900,  # Увеличенная фиксированная высота
-        width=1000,  # Фиксированная ширина
-        # Отключаем некоторые интерактивные события
-        hovermode=False,
-        # Конфигурация для отключения автомасштабирования
-        uirevision=False
-    )
-    
-    # Дополнительная конфигурация для отключения большинства элементов управления
-    fig.update_layout(
-        modebar=dict(
-            orientation='v',
-            bgcolor='rgba(0,0,0,0.3)',
-            color='white',
-            activecolor='white'
-        )
+        height=800
     )
     
     return fig
