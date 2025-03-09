@@ -26,24 +26,27 @@ def create_chakra_visualization_3d(energy_values, language='en'):
     # Add biofield/aura
     add_biofield_3d(fig, energy_values)
     
-    # Configure the layout
+    # Configure the layout with improved camera angle and aspect ratio
     fig.update_layout(
         scene = dict(
-            xaxis = dict(visible=False, range=[-1.5, 1.5]),
-            yaxis = dict(visible=False, range=[-1.5, 1.5]),
-            zaxis = dict(visible=False, range=[0, 7]),
+            xaxis = dict(visible=False, range=[-2.5, 2.5]),  # Расширенный диапазон для отображения полного кокона
+            yaxis = dict(visible=False, range=[-2.5, 2.5]),  # Расширенный диапазон для отображения полного кокона
+            zaxis = dict(visible=False, range=[0, 8]),       # Увеличенный вертикальный диапазон
             aspectmode='manual',
-            aspectratio=dict(x=1, y=1, z=2.5),
+            aspectratio=dict(x=1, y=1, z=2.0),               # Более естественное соотношение сторон
             camera=dict(
-                eye=dict(x=2.5, y=0, z=1.5),
-                up=dict(x=0, y=0, z=1)
+                eye=dict(x=2.2, y=0, z=2.0),                 # Улучшенный угол обзора
+                up=dict(x=0, y=0, z=1),
+                center=dict(x=0, y=0, z=3.5)                 # Центр сцены на середине биополя
             )
         ),
         margin=dict(l=0, r=0, b=0, t=0),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         showlegend=False,
-        template="plotly_dark"
+        template="plotly_dark",
+        # Увеличиваем высоту фигуры для лучшего отображения
+        height=700
     )
     
     return fig
@@ -135,12 +138,12 @@ def add_biofield_3d(fig, energy_values):
     avg_energy = sum(energy_values.values()) / len(energy_values)
     avg_energy_pct = avg_energy / 100.0
     
-    # Generate points for a spheroid shape with higher resolution for more details
-    u = np.linspace(0, 2 * np.pi, 50)  # Increased from 40 to 50
-    v = np.linspace(0, np.pi, 40)      # Increased from 30 to 40
+    # Генерируем точки для сфероида с увеличенным разрешением для большей детализации
+    u = np.linspace(0, 2 * np.pi, 60)  # Увеличено до 60 для более гладкой формы
+    v = np.linspace(0, np.pi, 50)      # Увеличено до 50 для более гладкой формы
     
-    # Create more layers of the aura for a richer effect
-    layers = 8  # Increased from 5 to 8
+    # Увеличиваем количество слоев ауры для более богатого эффекта
+    layers = 10  # Увеличено до 10 для более плавных переходов цвета и объема
     
     # Identify weak chakras for distortion effects
     weak_chakras = {name: energy for name, energy in energy_values.items() if energy < 30}
@@ -165,25 +168,27 @@ def add_biofield_3d(fig, energy_values):
         # Higher opacity for more saturation
         opacity = 0.22 * scale * avg_energy_pct
         
-        # Larger base dimensions for more dramatic field
-        x_scale = 1.2 * (1 + i*0.35) * (0.7 + avg_energy_pct * 0.6)  # Increased width
-        y_scale = 1.2 * (1 + i*0.35) * (0.7 + avg_energy_pct * 0.6)  # Increased depth
-        z_scale = 4.0 * (1 + i*0.25) * (0.7 + avg_energy_pct * 0.6)  # Increased height
+        # Более равномерные размеры для создания полноценного кокона биополя
+        x_scale = 1.8 * (1 + i*0.25) * (0.8 + avg_energy_pct * 0.4)  # Увеличенная ширина
+        y_scale = 1.8 * (1 + i*0.25) * (0.8 + avg_energy_pct * 0.4)  # Увеличенная глубина
+        z_scale = 3.8 * (1 + i*0.15) * (0.8 + avg_energy_pct * 0.4)  # Более пропорциональная высота
         
         # Calculate the blended color for this layer with enhanced intensity
         blended_color = calculate_layer_color(energy_values, i, layers)
         
-        # More saturation for high energy
+        # Более естественное усиление насыщенности для высокой энергии
         if avg_energy > 70:
-            # Boost color saturation for high energy biofields
-            blended_color = [min(255, c * 1.3) for c in blended_color]
+            # Более мягкое усиление для более естественных тонов биополя при высокой энергии
+            saturation_factor = 1.0 + (avg_energy - 70) / 30 * 0.25  # Максимум +25% при 100% энергии
+            blended_color = [min(255, c * saturation_factor) for c in blended_color]
         
         color_str = f'rgb({blended_color[0]}, {blended_color[1]}, {blended_color[2]})'
         
-        # Generate the base spheroid coordinates
+        # Генерация координат базового сфероида с лучшим центрированием
         x_base = x_scale * np.outer(np.cos(u), np.sin(v))
         y_base = y_scale * np.outer(np.sin(u), np.sin(v))
-        z_base = z_scale * np.outer(np.ones(np.size(u)), np.cos(v)) + 3.5  # Centered on the spine
+        # Лучшая центровка биополя относительно силуэта для более гармоничного расположения
+        z_base = z_scale * np.outer(np.ones(np.size(u)), np.cos(v)) + 3.8  # Смещено выше для лучшего баланса
         
         # Copy the base coordinates for modification
         x = np.copy(x_base)
@@ -331,20 +336,21 @@ def calculate_layer_color(energy_values, layer_index, total_layers):
     total_energy = sum(energy_values.values())
     avg_energy = total_energy / len(energy_values)
     
-    # The energy contrast factor makes differences between energy levels more pronounced
-    # Lower average energy = higher contrast between chakras
-    energy_contrast = 1.5 if avg_energy > 70 else 2.0 if avg_energy > 50 else 2.5
+    # Фактор контраста энергии делает различия между уровнями энергии более выраженными
+    # При низкой средней энергии = более высокий контраст между чакрами
+    # Уменьшаем контрастность для более естественных цветовых переходов
+    energy_contrast = 1.3 if avg_energy > 70 else 1.6 if avg_energy > 50 else 2.0
     
     for chakra in chakra_data:
         name = chakra["name"]
         base_color = chakra["color_rgb"]
         energy = energy_values[name] / 100.0
         
-        # Create more dramatic vertical banding by using exponential falloff
+        # Создаем более естественное вертикальное распределение цветов с более плавным переходом
         vertical_distance = abs(chakra_position_map[name] - layer_rel_position)
         
-        # Sharper falloff for more dramatic color transitions between chakra regions
-        proximity = 1 - min(vertical_distance * 3.0, 1) ** 1.5  # Exponential falloff for sharper bands
+        # Более мягкий переход между областями влияния чакр для более естественных цветовых переходов
+        proximity = 1 - min(vertical_distance * 2.2, 1) ** 1.2  # Более плавный градиент с меньшей экспоненциальностью
         
         # Enhanced weighting that makes energy differences more apparent
         # Higher energy chakras have disproportionately greater influence
@@ -354,10 +360,10 @@ def calculate_layer_color(energy_values, layer_index, total_layers):
         # Get adjusted color with more saturation for higher energy values
         adjusted_color = utils.calculate_chakra_color(base_color, energy)
         
-        # Enhance color saturation and brightness for high-energy chakras
+        # Улучшенная настройка насыщенности и яркости для чакр с высокой энергией
         if energy > 0.7:
-            # Boost colors for high energy chakras
-            saturation_boost = 1.0 + ((energy - 0.7) / 0.3) * 0.4  # Up to 40% boost at 100% energy
+            # Более мягкое усиление для более естественных цветов при высокой энергии чакр
+            saturation_boost = 1.0 + ((energy - 0.7) / 0.3) * 0.3  # До +30% при 100% энергии (было 40%)
             adjusted_color = [min(255, c * saturation_boost) for c in adjusted_color]
         
         # For very low energy chakras (<30%), desaturate the colors
