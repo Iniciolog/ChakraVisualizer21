@@ -25,7 +25,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
     menu_items={
         'About': """
-        ### Энерго-Визуал
+        ### AURA STUDIO
         **Разработано в НИЦ Инициологии и трансперсональной психологии**
         
         Streamlit v1.43.1
