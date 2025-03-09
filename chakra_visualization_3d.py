@@ -26,28 +26,46 @@ def create_chakra_visualization_3d(energy_values, language='en'):
     # Add biofield/aura
     add_biofield_3d(fig, energy_values)
     
-    # Configure the layout with improved camera angle and aspect ratio
+    # Жестко зафиксированные параметры отображения без возможности перемещения
     fig.update_layout(
         scene = dict(
-            xaxis = dict(visible=False, range=[-2.5, 2.5]),  # Расширенный диапазон для отображения полного кокона
-            yaxis = dict(visible=False, range=[-2.5, 2.5]),  # Расширенный диапазон для отображения полного кокона
-            zaxis = dict(visible=False, range=[0, 8]),       # Увеличенный вертикальный диапазон
+            xaxis = dict(visible=False, range=[-2.5, 2.5], fixedrange=True),
+            yaxis = dict(visible=False, range=[-2.5, 2.5], fixedrange=True),
+            zaxis = dict(visible=False, range=[0, 8], fixedrange=True),
             aspectmode='manual',
-            aspectratio=dict(x=1, y=1, z=2.0),               # Более естественное соотношение сторон
+            aspectratio=dict(x=1, y=1, z=2.0),
             camera=dict(
-                eye=dict(x=2.2, y=0, z=2.0),                 # Улучшенный угол обзора
+                eye=dict(x=2.2, y=0, z=2.0),
                 up=dict(x=0, y=0, z=1),
-                center=dict(x=0, y=0, z=3.5)                 # Центр сцены на середине биополя
-            )
+                center=dict(x=0, y=0, z=3.5),
+                projection=dict(type="orthographic")
+            ),
+            dragmode=False
         ),
-        margin=dict(l=0, r=0, b=0, t=0),
+        margin=dict(l=0, r=0, b=0, t=0, pad=0),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         showlegend=False,
         template="plotly_dark",
-        # Увеличиваем высоту фигуры для лучшего отображения
-        height=700
+        height=700,
+        width=700,
+        autosize=False,
+        # Отключаем все интерактивные элементы
+        hovermode=False,
+        dragmode=False,
+        uirevision=False
     )
+    
+    # Дополнительно отключаем все интерактивные инструменты
+    fig.update_layout({
+        'updatemenus': [],
+        'sliders': []
+    })
+    
+    # Устанавливаем config для отключения всех инструментов взаимодействия
+    fig.update_layout(modebar=dict(remove=["zoom", "pan", "select", "lasso", "zoomIn", "zoomOut", "autoScale", 
+                                           "resetScale", "toImage", "sendDataToCloud", "toggleHover",
+                                           "resetViewMapbox", "toggleSpikelines", "resetViewDefault"]))
     
     return fig
 

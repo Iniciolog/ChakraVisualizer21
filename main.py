@@ -215,14 +215,22 @@ with col2:
         fig = create_chakra_visualization(st.session_state.energy_values, st.session_state.language)
         st.pyplot(fig)
     else:  # 3D mode
-        # Добавляем CSS для увеличения размера контейнера и изображения 3D визуализации
+        # Специальный CSS для фиксированного размещения 3D визуализации
         st.markdown("""
         <style>
         .stPlotlyChart {
-            height: 800px !important;
+            height: 700px !important;
+            width: 700px !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
         }
         iframe {
-            min-height: 800px !important;
+            height: 700px !important;
+            width: 700px !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            border: none !important;
+            display: block !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -230,8 +238,16 @@ with col2:
         # Создаем 3D визуализацию
         fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
         
-        # Отображаем 3D визуализацию с подходящими параметрами
-        st.plotly_chart(fig_3d, use_container_width=True)
+        # Отображаем 3D визуализацию с фиксированным размером и отключенной интерактивностью
+        st.plotly_chart(
+            fig_3d, 
+            use_container_width=False,
+            config={
+                'displayModeBar': False,
+                'staticPlot': True,
+                'responsive': False
+            }
+        )
 
 # Detailed information section
 st.header(get_text("info_header"))
