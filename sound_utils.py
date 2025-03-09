@@ -198,12 +198,64 @@ def inject_sound_setup():
     Returns:
     str: Complete HTML string with all audio elements and control scripts
     """
-    # Start with the master control script
-    html = get_sound_control_js()
-    
-    # Add all the individual chakra sounds
+    # Make sure all sound files exist
     chakras = ["Root", "Sacral", "Solar Plexus", "Heart", "Throat", "Third Eye", "Crown"]
     for chakra in chakras:
-        html += get_sound_html(chakra)
+        sound_path = f"sounds/{chakra.lower()}_tone.mp3"
+        if not os.path.exists(sound_path):
+            # Generate a sound if it doesn't exist
+            sound = generate_chakra_sound(chakra)
+            sound.export(sound_path, format="mp3")
+    
+    # Create simple audio HTML with controls embedded in page
+    html = """
+    <div id="chakra-sounds-container" style="display:none;">
+    """
+    
+    # Add all audio elements
+    for chakra in chakras:
+        sound_path = f"sounds/{chakra.lower()}_tone.mp3"
+        with open(sound_path, "rb") as f:
+            data = f.read()
+            encoded = base64.b64encode(data).decode()
+            
+            html += f"""
+            <audio id="chakra-sound-{chakra.lower()}" preload="auto">
+                <source src="data:audio/mp3;base64,{encoded}" type="audio/mp3">
+                Your browser does not support the audio element.
+            </audio>
+            """
+    
+    html += """
+    </div>
+    
+    <script>
+    // Audio control functions
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up audio controls
+        window.playChakraSound = function(chakraName, volume) {
+            // First stop any playing sounds
+            window.stopAllChakraSounds();
+            
+            // Get the audio element
+            const audio = document.getElementById('chakra-sound-' + chakraName.toLowerCase());
+            if (audio) {
+                audio.volume = volume || 0.5;
+                audio.currentTime = 0;
+                audio.loop = true;
+                audio.play().catch(error => console.log('Error playing sound:', error));
+            }
+        };
+        
+        window.stopAllChakraSounds = function() {
+            const audioElements = document.querySelectorAll('audio[id^="chakra-sound-"]');
+            audioElements.forEach(audio => {
+                audio.pause();
+                audio.currentTime = 0;
+            });
+        };
+    });
+    </script>
+    """
     
     return html
