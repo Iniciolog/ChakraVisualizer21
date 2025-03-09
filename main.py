@@ -215,8 +215,21 @@ with col2:
         fig = create_chakra_visualization(st.session_state.energy_values, st.session_state.language)
         st.pyplot(fig)
     else:  # 3D mode
+        # Добавляем CSS для увеличения размера контейнера и изображения 3D визуализации
+        st.markdown("""
+        <style>
+        .stPlotlyChart {
+            height: 850px !important;
+        }
+        iframe {
+            min-height: 800px !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Создаем 3D визуализацию с увеличенной высотой
         fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
-        st.plotly_chart(fig_3d, use_container_width=True, height=700)
+        st.plotly_chart(fig_3d, use_container_width=True, height=900)
 
 # Detailed information section
 st.header(get_text("info_header"))
