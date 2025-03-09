@@ -215,7 +215,7 @@ with col2:
         fig = create_chakra_visualization(st.session_state.energy_values, st.session_state.language)
         st.pyplot(fig)
     else:  # 3D mode
-        # Базовый CSS для улучшения отображения
+        # Добавляем CSS для увеличения размера контейнера и изображения 3D визуализации
         st.markdown("""
         <style>
         .stPlotlyChart {
@@ -227,10 +227,10 @@ with col2:
         </style>
         """, unsafe_allow_html=True)
         
-        # Создаем 3D визуализацию с базовыми параметрами
+        # Создаем 3D визуализацию
         fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
         
-        # Используем стандартные параметры отображения
+        # Отображаем 3D визуализацию с подходящими параметрами
         st.plotly_chart(fig_3d, use_container_width=True)
 
 # Detailed information section
