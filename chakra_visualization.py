@@ -142,12 +142,12 @@ def draw_biofield(ax, energy_values):
             energy = energy_values[name] / 100.0
             
             # Enhanced weight calculation for more vibrant color changes
-            chakra_position = {"Root": 0, "Sacral": 1, "Solar Plexus": 2, 
+            chakra_position_map = {"Root": 0, "Sacral": 1, "Solar Plexus": 2, 
                               "Heart": 3, "Throat": 4, "Third Eye": 5, "Crown": 6}
             
             # Higher chakras influence upper aura, lower chakras influence lower aura
             # More aggressive position weighting for stronger color zones
-            position_weight = 1 - (abs(chakra_position[name] / 6 - i / layers) ** 1.5)  # Exponential falloff
+            position_weight = 1 - (abs(chakra_position_map[name] / 6 - i / layers) ** 1.5)  # Exponential falloff
             
             # More dramatic energy impact
             weight = (energy ** 1.5) * position_weight  # Exponential energy effect
@@ -170,10 +170,6 @@ def draw_biofield(ax, energy_values):
         else:
             blended_color = [0, 0, 0]  # Defaults to black if no energy
         
-        # Define chakra positions mapping
-        chakra_position_map = {"Root": 0, "Sacral": 1, "Solar Plexus": 2, 
-                              "Heart": 3, "Throat": 4, "Third Eye": 5, "Crown": 6}
-                              
         # Create distortions for very weak chakras (less than 30%)
         if weak_chakras and i < layers-3:  # Apply to inner layers only
             # Get original ellipse parameters
