@@ -279,32 +279,45 @@ with sound_col1:
         step=0.1
     )
     
+    # Manage chakra sound state in session state
+    if 'playing_chakra' not in st.session_state:
+        st.session_state.playing_chakra = None
+    
     # Play and stop buttons
     col1, col2 = st.columns(2)
     with col1:
-        if st.button(get_text("sound_play"), type="primary"):
+        if st.button(get_text("sound_play"), type="primary", key="play_button"):
+            # Set the selected chakra as currently playing
+            st.session_state.playing_chakra = selected_chakra_en
+            
             # JavaScript to control sound playback
             st.markdown(
                 f"""
                 <script>
                     // Using a timeout to ensure the DOM is ready
                     setTimeout(function() {{
-                        controlChakraSounds('{selected_chakra_en}', 'play');
-                        controlChakraSounds('{selected_chakra_en}', 'setVolume', {volume});
+                        if (typeof window.playChakraSound === 'function') {{
+                            window.playChakraSound('{selected_chakra_en}', {volume});
+                        }}
                     }}, 500);
                 </script>
                 """,
                 unsafe_allow_html=True
             )
     with col2:
-        if st.button(get_text("sound_stop")):
+        if st.button(get_text("sound_stop"), key="stop_button"):
+            # Clear the playing chakra
+            st.session_state.playing_chakra = None
+            
             # JavaScript to stop sound playback
             st.markdown(
                 """
                 <script>
                     // Using a timeout to ensure the DOM is ready
                     setTimeout(function() {
-                        stopAllChakraSounds();
+                        if (typeof window.stopAllChakraSounds === 'function') {
+                            window.stopAllChakraSounds();
+                        }
                     }, 500);
                 </script>
                 """,
@@ -312,40 +325,61 @@ with sound_col1:
             )
 
 with sound_col2:
-    # Display a chakra wheel with clickable chakras
-    # We'll use a simplified approach with colored circles
+    # Display a chakra wheel with clickable chakras using Streamlit buttons
+    # We'll use a simplified approach with colored buttons
     for i, chakra in enumerate(chakra_data):
         chakra_name = chakra["name"]
         chakra_name_display = chakra["name_ru"] if st.session_state.language == 'ru' else chakra["name"]
         color_hex = chakra["color_hex"]
         
-        # Position the chakras from bottom to top
-        st.markdown(
-            f"""
-            <div 
-                style="
-                    background-color: {color_hex}; 
-                    width: 60px; 
-                    height: 60px; 
-                    border-radius: 50%; 
-                    margin: 10px auto;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-weight: bold;
-                    cursor: pointer;
-                    text-align: center;
-                    box-shadow: 0 0 10px rgba(255,255,255,0.3);
-                "
-                onclick="controlChakraSounds('{chakra_name}', 'play'); controlChakraSounds('{chakra_name}', 'setVolume', {volume});"
-            >
-                {i+1}
-            </div>
-            <div style="text-align: center; margin-bottom: 15px;">{chakra_name_display}</div>
-            """,
-            unsafe_allow_html=True
-        )
+        # Create a container for this chakra
+        chakra_container = st.container()
+        
+        with chakra_container:
+            # Display chakra name
+            st.markdown(f"<div style='text-align: center;'>{chakra_name_display}</div>", unsafe_allow_html=True)
+            
+            # Create a button with the chakra's color
+            if st.button(f"{i+1}", 
+                        key=f"chakra_button_{chakra_name}",
+                        help=f"Play {chakra_name} sound",
+                        use_container_width=True):
+                # Set the selected chakra as currently playing
+                st.session_state.playing_chakra = chakra_name
+                
+                # Play this chakra's sound
+                st.markdown(
+                    f"""
+                    <script>
+                        // Using a timeout to ensure the DOM is ready
+                        setTimeout(function() {{
+                            if (typeof window.playChakraSound === 'function') {{
+                                window.playChakraSound('{chakra_name}', {volume});
+                            }}
+                        }}, 500);
+                    </script>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            # Add custom styling for the button to make it circular
+            st.markdown(
+                f"""
+                <style>
+                [data-testid="baseButton-secondary"]:has(div:contains('{i+1}')) {{
+                    background-color: {color_hex} !important;
+                    border-radius: 50% !important;
+                    width: 60px !important;
+                    height: 60px !important;
+                    margin: 10px auto !important;
+                    color: white !important;
+                    font-weight: bold !important;
+                    box-shadow: 0 0 10px rgba(255,255,255,0.3) !important;
+                }}
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
 
 # Divider
 st.markdown("---")
