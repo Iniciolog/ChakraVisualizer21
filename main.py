@@ -22,7 +22,10 @@ st.set_page_config(
     page_title=get_text("page_title"),
     page_icon="🧘",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'About': None  # Удаляем пункт About из меню
+    }
 )
 
 # Custom CSS
