@@ -172,7 +172,7 @@ app_text = {
         "balanced_qualities": "Balanced Qualities",
         "imbalanced_signs": "Imbalanced Signs", 
         "healing_practices": "Healing Practices",
-        "footer": "Developed at the Research Center for Initiology and Transpersonal Psychology"
+        "footer": "Developed at the Research Center for Initiology and Transpersonal Psychology © 2025"
     },
     "ru": {
         "page_title": "AURA STUDIO",
@@ -202,6 +202,6 @@ app_text = {
         "balanced_qualities": "Качества при Балансе",
         "imbalanced_signs": "Признаки Дисбаланса",
         "healing_practices": "Практики для Исцеления",
-        "footer": "Разработано в НИЦ Инициологии и трансперсональной психологии"
+        "footer": "Разработано в НИЦ Инициологии и трансперсональной психологии © 2025"
     }
 }
