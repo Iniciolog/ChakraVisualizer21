@@ -422,64 +422,8 @@ if st.session_state.report_processed and st.session_state.report_analysis:
             # Показываем визуализацию с подписями
             st.pyplot(organ_fig)
             
-            # Добавляем интерактивные кнопки для выбора органов с помощью нативных компонентов Streamlit
+            # Добавляем интерактивный выбор органа только через выпадающий список
             st.markdown(f"### {get_text('select_organ')}:")
-            
-            # Создаем несколько строк кнопок для лучшего вида
-            organs_list = list(organ_visualizer.organs_positions.keys())
-            rows = [organs_list[i:i+3] for i in range(0, len(organs_list), 3)]
-            
-            for row in rows:
-                cols = st.columns(len(row))
-                for i, organ_name in enumerate(row):
-                    with cols[i]:
-                        # Определяем статус органа для цветового выделения кнопки
-                        status = organ_visualizer._determine_organ_status(organ_name, diagnostic_data)
-                        
-                        # Выбираем цвет и текст для кнопки на основе статуса органа
-                        if status == "no_data":
-                            button_color = "#CCCCCC"  # серый для органов без данных
-                            text_color = "black"
-                        else:
-                            # Конвертируем RGBA в HEX
-                            rgba_color = organ_visualizer.organ_status_colors[status]
-                            r, g, b, a = rgba_color
-                            r, g, b = int(r*255), int(g*255), int(b*255)
-                            button_color = f"#{r:02x}{g:02x}{b:02x}"
-                            text_color = "white" if status in ["damaged", "inflamed"] else "black"
-                        
-                        # Создаем стилизованную кнопку для этого органа
-                        button_styles = f"""
-                        <style>
-                        div[data-testid*="stButton"] button[kind="secondary"] {{
-                            background-color: {button_color};
-                            color: {text_color};
-                            font-weight: 500;
-                            width: 100%;
-                            border: none;
-                            padding: 0.5rem;
-                            border-radius: 0.5rem;
-                            transition: all 0.3s;
-                        }}
-                        div[data-testid*="stButton"] button[kind="secondary"]:hover {{
-                            transform: scale(1.05);
-                            box-shadow: 0 0 5px rgba(0,0,0,0.2);
-                        }}
-                        </style>
-                        """
-                        st.markdown(button_styles, unsafe_allow_html=True)
-                        
-                        # Если кнопка нажата, обновим выбранный орган
-                        if st.button(
-                            organ_name, 
-                            key=f"btn_{organ_name}",
-                            help=f"{get_text('select_organ')}: '{organ_name}'",
-                            use_container_width=True,
-                            type="secondary"
-                        ):
-                            st.session_state.selected_organ = organ_name
-                            # Используем rerun для обновления интерфейса
-                            st.rerun()
             
             # Добавляем интерактивные возможности (выбор органа из списка)
             if 'selected_organ' not in st.session_state:

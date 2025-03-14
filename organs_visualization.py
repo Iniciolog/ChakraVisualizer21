@@ -29,7 +29,7 @@ class OrgansVisualizer:
     }
     
     # Путь к анатомическому изображению
-    anatomy_image_path = "assets/images/human_anatomy.jpg"
+    anatomy_image_path = "assets/images/human_anatomy_blue.jpg"
     
     # Соответствие органов параметрам из отчета диагностики
     organ_params_mapping = {
@@ -101,8 +101,9 @@ class OrgansVisualizer:
         if os.path.exists(self.anatomy_image_path):
             # Загружаем изображение
             img = mpimg.imread(self.anatomy_image_path)
-            # Размещаем изображение на всей области графика
-            ax.imshow(img, extent=[0, 1, 0, 1], aspect='auto', alpha=0.7)
+            # Размещаем изображение на всей области графика, используем полную прозрачность (alpha=1.0), 
+            # так как это профессиональное изображение с нужными эффектами
+            ax.imshow(img, extent=[0, 1, 0, 1], aspect='auto', alpha=1.0)
         else:
             # Если изображение не найдено, выводим сообщение
             print(f"Предупреждение: Анатомическое изображение не найдено: {self.anatomy_image_path}")
@@ -195,13 +196,21 @@ class OrgansVisualizer:
                 color = (0.8, 0.8, 0.8, 0.3)  # Полупрозрачный серый для органов без данных
             else:
                 color = self.organ_status_colors[status]
+                
+            # Увеличиваем прозрачность для лучшей видимости органов на голубом фоне изображения
+            color_rgba = list(color)
+            color_rgba[3] = 0.5  # Уменьшаем прозрачность до 50%
+            color = tuple(color_rgba)
             
             # Рисуем орган (может быть один или несколько элементов)
             if isinstance(position, list):
                 # Если у органа несколько частей (например, почки, легкие)
                 for pos in position:
                     x, y, width, height, angle = pos
-                    organ_patch = patches.Ellipse((x, y), width, height, angle=angle, fill=True, color=color)
+                    # Уменьшаем размер наложений для более точного соответствия анатомическому изображению
+                    width_adjusted = width * 0.8  # Уменьшаем на 20% 
+                    height_adjusted = height * 0.8  # Уменьшаем на 20%
+                    organ_patch = patches.Ellipse((x, y), width_adjusted, height_adjusted, angle=angle, fill=True, color=color)
                     ax.add_patch(organ_patch)
                     if organ not in organ_patches:
                         organ_patches[organ] = []
@@ -209,7 +218,10 @@ class OrgansVisualizer:
             else:
                 # Если у органа одна часть
                 x, y, width, height, angle = position
-                organ_patch = patches.Ellipse((x, y), width, height, angle=angle, fill=True, color=color)
+                # Уменьшаем размер наложений для более точного соответствия анатомическому изображению
+                width_adjusted = width * 0.8  # Уменьшаем на 20%
+                height_adjusted = height * 0.8  # Уменьшаем на 20%
+                organ_patch = patches.Ellipse((x, y), width_adjusted, height_adjusted, angle=angle, fill=True, color=color)
                 ax.add_patch(organ_patch)
                 organ_patches[organ] = [organ_patch]
         
