@@ -217,8 +217,17 @@ with upload_col1:
                 if st.button(get_text("apply_report_results"), type="primary"):
                     # Update the energy values based on analysis
                     if 'chakra_energy' in analysis_results:
+                        # Обновляем значения энергии чакр в session_state
                         for chakra_name, energy_value in analysis_results['chakra_energy'].items():
-                            st.session_state.energy_values[chakra_name] = energy_value
+                            # Преобразуем значение в целое число для слайдера
+                            st.session_state.energy_values[chakra_name] = int(energy_value)
+                            
+                        # Выводим отладочную информацию
+                        st.write("Значения энергии чакр обновлены:")
+                        for chakra_name, energy_value in st.session_state.energy_values.items():
+                            st.write(f"{chakra_name}: {energy_value}")
+                            
+                    # Перезагружаем страницу для применения изменений
                     st.rerun()
 
 with upload_col2:
@@ -321,11 +330,18 @@ with col1:
             unsafe_allow_html=True
         )
         
+        # Убедимся, что в session_state есть значение для этой чакры
+        if chakra_name not in st.session_state.energy_values:
+            st.session_state.energy_values[chakra_name] = 100
+        
+        # Добавим отладочную информацию
+        st.write(f"Текущее значение {chakra_name}: {st.session_state.energy_values[chakra_name]}")
+        
         # Create slider for this chakra
         energy_value = st.slider(
             f"{chakra_name} {get_text('energy_suffix')}",
             0, 100, 
-            st.session_state.energy_values[chakra_name],
+            int(st.session_state.energy_values[chakra_name]),  # Явное преобразование в int
             key=f"{chakra_name}_slider",
             label_visibility="collapsed"
         )
