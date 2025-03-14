@@ -172,7 +172,31 @@ app_text = {
         "balanced_qualities": "Balanced Qualities",
         "imbalanced_signs": "Imbalanced Signs", 
         "healing_practices": "Healing Practices",
-        "footer": "Developed at the Research Center for Initiology and Transpersonal Psychology"
+        "footer": "Developed at the Research Center for Initiology and Transpersonal Psychology",
+        
+        # New diagnostic report analysis texts
+        "report_upload_header": "Bioresonance Diagnostics Report Upload",
+        "report_upload_info": "Upload a bioresonance diagnostics report in PDF format to automatically analyze and transform the data into chakra and biofield visualizations.",
+        "upload_button": "Upload Report",
+        "processing_report": "Processing report...",
+        "analyzing_report": "Analyzing diagnostic report...",
+        "report_processed": "Report processed successfully!",
+        "report_error": "Error processing report",
+        "apply_report_results": "Apply Results to Visualization",
+        "report_analysis_header": "Report Analysis Results",
+        "parameter": "Parameter",
+        "measured_value": "Measured Value",
+        "normal_range": "Normal Range",
+        "status": "Status",
+        "normal": "Normal",
+        "abnormal": "Abnormal",
+        "high": "High",
+        "low": "Low",
+        "report_info": "Report Information",
+        "diagnostic_results": "Diagnostic Results",
+        "chakra_impact": "Chakra Impact Analysis",
+        "estimated_impact": "Estimated impact on chakras based on diagnostic results:",
+        "use_manual_values": "Return to Manual Mode"
     },
     "ru": {
         "page_title": "AURA STUDIO",
@@ -202,6 +226,30 @@ app_text = {
         "balanced_qualities": "Качества при Балансе",
         "imbalanced_signs": "Признаки Дисбаланса",
         "healing_practices": "Практики для Исцеления",
-        "footer": "Разработано в НИЦ Инициологии и трансперсональной психологии"
+        "footer": "Разработано в НИЦ Инициологии и трансперсональной психологии",
+        
+        # Новые тексты для анализа отчетов диагностики
+        "report_upload_header": "Загрузка Отчета Биорезонансной Диагностики",
+        "report_upload_info": "Загрузите отчет биорезонансной диагностики в формате PDF для автоматического анализа и преобразования данных в визуализацию чакр и биополя.",
+        "upload_button": "Загрузить Отчет",
+        "processing_report": "Обработка отчета...",
+        "analyzing_report": "Анализ диагностического отчета...",
+        "report_processed": "Отчет успешно обработан!",
+        "report_error": "Ошибка обработки отчета",
+        "apply_report_results": "Применить Результаты к Визуализации",
+        "report_analysis_header": "Результаты Анализа Отчета",
+        "parameter": "Параметр",
+        "measured_value": "Измеренное Значение",
+        "normal_range": "Диапазон Нормы",
+        "status": "Статус",
+        "normal": "Норма",
+        "abnormal": "Отклонение",
+        "high": "Повышен",
+        "low": "Понижен",
+        "report_info": "Информация об Отчете",
+        "diagnostic_results": "Результаты Диагностики",
+        "chakra_impact": "Анализ Влияния на Чакры",
+        "estimated_impact": "Предполагаемое влияние на чакры на основе результатов диагностики:",
+        "use_manual_values": "Вернуться в Ручной Режим"
     }
 }
