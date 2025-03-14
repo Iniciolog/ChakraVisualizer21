@@ -14,12 +14,39 @@ if 'language' not in st.session_state:
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = '2d'  # Default to 2D view
     
+# Initialize session state for energy values (moved here to be available for apply_results)
+if 'energy_values' not in st.session_state:
+    st.session_state.energy_values = {chakra['name']: 100 for chakra in chakra_data}
+    
 # Initialize session state for report analysis
 if 'report_processed' not in st.session_state:
     st.session_state.report_processed = False
     
 if 'report_analysis' not in st.session_state:
     st.session_state.report_analysis = None
+    
+# Проверка и применение результатов анализа
+if 'apply_results' in st.session_state and st.session_state.apply_results:
+    # Берем значения энергии чакр из сохраненных результатов
+    if 'chakra_energy' in st.session_state.apply_results:
+        # Обновляем значения энергии чакр
+        for chakra_name, energy_value in st.session_state.apply_results['chakra_energy'].items():
+            # Преобразуем значение в целое число
+            st.session_state.energy_values[chakra_name] = int(energy_value)
+        
+        # Очищаем временные данные
+        st.session_state.apply_results = None
+    
+# Callback для применения результатов анализа к визуализации
+def apply_report_results():
+    if st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+        # Обновляем значения энергии чакр в session_state
+        for chakra_name, energy_value in st.session_state.report_analysis['chakra_energy'].items():
+            # Преобразуем значение в целое число для слайдера
+            st.session_state.energy_values[chakra_name] = int(energy_value)
+        
+        # Устанавливаем флаг обновления визуализации
+        st.session_state.visualization_updated = True
 
 # Get text based on selected language
 def get_text(key):
@@ -213,22 +240,24 @@ with upload_col1:
                 # Update success message
                 st.success(get_text("report_processed"))
                 
-                # Add button to apply the results to the visualization
-                if st.button(get_text("apply_report_results"), type="primary"):
-                    # Update the energy values based on analysis
-                    if 'chakra_energy' in analysis_results:
-                        # Обновляем значения энергии чакр в session_state
-                        for chakra_name, energy_value in analysis_results['chakra_energy'].items():
-                            # Преобразуем значение в целое число для слайдера
-                            st.session_state.energy_values[chakra_name] = int(energy_value)
-                            
-                        # Выводим отладочную информацию
-                        st.write("Значения энергии чакр обновлены:")
-                        for chakra_name, energy_value in st.session_state.energy_values.items():
-                            st.write(f"{chakra_name}: {energy_value}")
-                            
-                    # Перезагружаем страницу для применения изменений
-                    st.rerun()
+                # Добавляем флаг для отслеживания изменений энергии чакр
+                if 'visualization_updated' not in st.session_state:
+                    st.session_state.visualization_updated = False
+                
+                # Функция для применения результатов анализа
+                def update_chakra_values():
+                    # Сохраняем текущие результаты анализа во временную переменную
+                    temp_results = analysis_results.copy()
+                    # Применяем изменения после перезагрузки страницы
+                    st.session_state.apply_results = temp_results
+                    st.session_state.visualization_updated = True
+                
+                # Добавляем кнопку для применения результатов
+                st.button(
+                    get_text("apply_report_results"), 
+                    type="primary",
+                    on_click=update_chakra_values
+                )
 
 with upload_col2:
     # Display analysis results if available
@@ -310,9 +339,10 @@ with col1:
     st.header(get_text("param_header"))
     st.markdown(get_text("param_desc"))
     
-    # Initialize session state for energy values if not already present
-    if 'energy_values' not in st.session_state:
-        st.session_state.energy_values = {chakra['name']: 100 for chakra in chakra_data}
+    # Убедимся, что все чакры имеют значения
+    for chakra in chakra_data:
+        if chakra['name'] not in st.session_state.energy_values:
+            st.session_state.energy_values[chakra['name']] = 100
     
     # Create sliders for each chakra
     for chakra in chakra_data:
@@ -329,10 +359,6 @@ with col1:
             f"</div>",
             unsafe_allow_html=True
         )
-        
-        # Убедимся, что в session_state есть значение для этой чакры
-        if chakra_name not in st.session_state.energy_values:
-            st.session_state.energy_values[chakra_name] = 100
         
         # Добавим отладочную информацию
         st.write(f"Текущее значение {chakra_name}: {st.session_state.energy_values[chakra_name]}")
