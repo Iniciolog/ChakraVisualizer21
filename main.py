@@ -491,8 +491,14 @@ if st.session_state.report_processed and st.session_state.report_analysis:
                         organ_details['status']
                     )
                     
+                    # Показываем подпись для детального изображения
+                    st.markdown(f"**{get_text('organ_detail_image')}:**")
+                    
                     # Показываем детальное изображение
                     st.pyplot(organ_detail_fig)
+                else:
+                    # Сообщаем, что для этого органа нет детального изображения
+                    st.info(get_text('no_detailed_image'))
                     
                 # Показываем связанные параметры
                 if organ_details['parameters']:
