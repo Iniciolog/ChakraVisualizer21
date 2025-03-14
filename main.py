@@ -394,6 +394,96 @@ with col2:
         fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
         st.plotly_chart(fig_3d, use_container_width=True, height=700)
 
+# Добавляем секцию для органной визуализации, если есть данные анализа
+if st.session_state.report_processed and st.session_state.report_analysis:
+    st.header(get_text("organ_visualization_tab"))
+    st.markdown(get_text("organ_visualization_info"))
+    
+    # Создаем две колонки: одна для визуализации, другая для деталей
+    organ_col1, organ_col2 = st.columns([3, 2])
+    
+    with organ_col1:
+        # Инициализируем визуализатор органов
+        if 'diagnostic_data' in st.session_state.report_analysis:
+            organ_visualizer = OrgansVisualizer(st.session_state.language)
+            diagnostic_data = st.session_state.report_analysis['diagnostic_data']
+            
+            # Создаем визуализацию органов
+            organ_fig = organ_visualizer.create_organs_visualization(diagnostic_data)
+            
+            # Сохраняем ссылку на объект визуализатора в session_state, если он еще не существует
+            if 'organ_visualizer' not in st.session_state:
+                st.session_state.organ_visualizer = organ_visualizer
+                
+            # Показываем визуализацию
+            st.pyplot(organ_fig)
+            
+            # Добавляем интерактивные возможности (выбор органа)
+            if 'selected_organ' not in st.session_state:
+                st.session_state.selected_organ = None
+                
+            # Создаем список органов для выбора
+            organ_names = list(organ_visualizer.organs_positions.keys())
+            organ_names_localized = organ_names  # В будущем можно добавить локализацию названий органов
+            
+            # Выпадающий список для выбора органа
+            selected_organ = st.selectbox(
+                label=get_text("select_organ"),
+                options=organ_names_localized,
+                index=0,
+                key="organ_selector"
+            )
+            
+            # Обновляем выбранный орган в session_state
+            st.session_state.selected_organ = selected_organ
+    
+    with organ_col2:
+        if st.session_state.selected_organ and 'organ_visualizer' in st.session_state:
+            # Получаем информацию о выбранном органе
+            if 'diagnostic_data' in st.session_state.report_analysis:
+                organ_details = st.session_state.organ_visualizer.get_organ_status_description(
+                    st.session_state.selected_organ, 
+                    st.session_state.report_analysis['diagnostic_data']
+                )
+                
+                # Определяем цвет для статуса органа
+                status_colors = {
+                    "healthy": "#E6CC33", # светло-золотой
+                    "inflamed": "#E63333", # красный
+                    "weakened": "#999999", # серый
+                    "damaged": "#333333",  # черный
+                    "no_data": "#CCCCCC"   # светло-серый
+                }
+                
+                status_color = status_colors.get(organ_details['status'], "#CCCCCC")
+                
+                # Показываем информацию об органе
+                st.subheader(get_text("organ_detail_header"))
+                
+                # Показываем орган и его статус
+                st.markdown(
+                    f"<div style='display: flex; align-items: center; margin-bottom: 15px;'>"
+                    f"<div style='background-color: {status_color}; width: 20px; height: 20px; border-radius: 50%; margin-right: 10px;'></div>"
+                    f"<span style='font-size: 1.2em;'><b>{organ_details['organ']}</b>: {organ_details['status_label']}</span>"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
+                
+                # Показываем связанные параметры
+                if organ_details['parameters']:
+                    st.markdown(f"**{get_text('related_parameters')}:**")
+                    for param in organ_details['parameters']:
+                        status_text = get_text('normal') if param['status'] == 'normal' else get_text('abnormal')
+                        min_norm, max_norm = param['normal_range']
+                        
+                        st.markdown(
+                            f"- **{param['name']}**: {param['result']} ({min_norm} - {max_norm}), {status_text}"
+                        )
+                else:
+                    st.info(get_text('no_data_organ'))
+        else:
+            st.info(get_text("select_organ"))
+
 # Detailed information section
 st.header(get_text("info_header"))
 st.markdown(get_text("info_intro"))
