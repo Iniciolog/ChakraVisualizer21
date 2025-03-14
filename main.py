@@ -6,6 +6,7 @@ from chakra_visualization_3d import create_chakra_visualization_3d
 from assets.chakra_info import chakra_data, app_text
 import utils
 from diagnostic_analyzer import DiagnosticReportAnalyzer
+from organs_visualization import OrgansVisualizer
 
 # Initialize session state for language and view mode
 if 'language' not in st.session_state:
