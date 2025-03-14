@@ -196,7 +196,19 @@ app_text = {
         "diagnostic_results": "Diagnostic Results",
         "chakra_impact": "Chakra Impact Analysis",
         "estimated_impact": "Estimated impact on chakras based on diagnostic results:",
-        "use_manual_values": "Return to Manual Mode"
+        "use_manual_values": "Return to Manual Mode",
+        
+        # Organ visualization texts
+        "organ_visualization_tab": "Organ Visualization",
+        "organ_visualization_info": "This visualization shows the state of the body's organs based on diagnostic data. Hover over an organ to see detailed information.",
+        "healthy_organ": "Healthy",
+        "inflamed_organ": "Inflamed",
+        "weakened_organ": "Weakened",
+        "damaged_organ": "Damaged",
+        "no_data_organ": "No data available",
+        "organ_detail_header": "Organ Details",
+        "related_parameters": "Related Diagnostic Parameters",
+        "select_organ": "Click on an organ for details"
     },
     "ru": {
         "page_title": "AURA STUDIO",
@@ -250,6 +262,18 @@ app_text = {
         "diagnostic_results": "Результаты Диагностики",
         "chakra_impact": "Анализ Влияния на Чакры",
         "estimated_impact": "Предполагаемое влияние на чакры на основе результатов диагностики:",
-        "use_manual_values": "Вернуться в Ручной Режим"
+        "use_manual_values": "Вернуться в Ручной Режим",
+        
+        # Органная визуализация
+        "organ_visualization_tab": "Визуализация Органов",
+        "organ_visualization_info": "Эта визуализация показывает состояние органов тела на основе данных диагностики. Наведите на орган для получения подробной информации.",
+        "healthy_organ": "Здоровый",
+        "inflamed_organ": "Воспаленный",
+        "weakened_organ": "Ослабленный",
+        "damaged_organ": "Поврежденный",
+        "no_data_organ": "Нет данных",
+        "organ_detail_header": "Информация об Органе",
+        "related_parameters": "Связанные Диагностические Параметры",
+        "select_organ": "Нажмите на орган для подробностей"
     }
 }
