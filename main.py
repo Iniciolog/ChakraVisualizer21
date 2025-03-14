@@ -5,6 +5,7 @@ from chakra_visualization import create_chakra_visualization
 from chakra_visualization_3d import create_chakra_visualization_3d
 from assets.chakra_info import chakra_data, app_text
 import utils
+from diagnostic_analyzer import DiagnosticReportAnalyzer
 
 # Initialize session state for language and view mode
 if 'language' not in st.session_state:
@@ -12,6 +13,13 @@ if 'language' not in st.session_state:
     
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = '2d'  # Default to 2D view
+    
+# Initialize session state for report analysis
+if 'report_processed' not in st.session_state:
+    st.session_state.report_processed = False
+    
+if 'report_analysis' not in st.session_state:
+    st.session_state.report_analysis = None
 
 # Get text based on selected language
 def get_text(key):
@@ -165,6 +173,123 @@ with save_col1:
                  f"{get_text('birthdate')}: {st.session_state.client_info['birthdate']}\n"
                  f"{get_text('phone')}: {st.session_state.client_info['phone']}\n"
                  f"{get_text('email')}: {st.session_state.client_info['email']}")
+
+# Report upload section
+st.header(get_text("report_upload_header"))
+st.markdown(get_text("report_upload_info"))
+
+# Create two columns for the report upload functionality
+upload_col1, upload_col2 = st.columns([1, 2])
+
+with upload_col1:
+    # File uploader for diagnostic report
+    uploaded_file = st.file_uploader(
+        get_text("upload_button"), 
+        type="pdf",
+        key="diagnostic_report"
+    )
+    
+    # If a file was uploaded
+    if uploaded_file is not None and not st.session_state.report_processed:
+        # Show processing message
+        with st.spinner(get_text("analyzing_report")):
+            # Create an analyzer instance
+            analyzer = DiagnosticReportAnalyzer()
+            
+            # Process the report
+            analysis_results = analyzer.analyze_report(uploaded_file)
+            
+            if 'error' in analysis_results:
+                st.error(f"{get_text('report_error')}: {analysis_results['error']}")
+            else:
+                # Store analysis results in session state
+                st.session_state.report_analysis = analysis_results
+                st.session_state.report_processed = True
+                
+                # Fill client info if available
+                if 'client_info' in analysis_results and analysis_results['client_info'].get('fullname'):
+                    st.session_state.client_info['fullname'] = analysis_results['client_info'].get('fullname', '')
+                
+                # Update success message
+                st.success(get_text("report_processed"))
+                
+                # Add button to apply the results to the visualization
+                if st.button(get_text("apply_report_results"), type="primary"):
+                    # Update the energy values based on analysis
+                    if 'chakra_energy' in analysis_results:
+                        for chakra_name, energy_value in analysis_results['chakra_energy'].items():
+                            st.session_state.energy_values[chakra_name] = energy_value
+                    st.rerun()
+
+with upload_col2:
+    # Display analysis results if available
+    if st.session_state.report_processed and st.session_state.report_analysis:
+        analysis = st.session_state.report_analysis
+        
+        st.subheader(get_text("report_analysis_header"))
+        
+        # Display client info
+        if 'client_info' in analysis:
+            st.write(f"**{get_text('report_info')}:**")
+            for key, value in analysis['client_info'].items():
+                if key == 'fullname':
+                    label = get_text('fullname')
+                elif key == 'age':
+                    label = get_text('birthdate')
+                else:
+                    label = key.replace('_', ' ').capitalize()
+                st.write(f"- {label}: {value}")
+        
+        # Display diagnostic data in a table
+        if 'diagnostic_data' in analysis and analysis['diagnostic_data']:
+            st.write(f"**{get_text('diagnostic_results')}:**")
+            
+            # Create a DataFrame for diagnostic data
+            import pandas as pd
+            diagnostic_data = []
+            
+            for param, data in analysis['diagnostic_data'].items():
+                status_text = get_text('normal') if data.get('status') == 'normal' else get_text('abnormal')
+                min_norm, max_norm = data.get('normal_range', (0, 0))
+                
+                diagnostic_data.append({
+                    get_text('parameter'): param,
+                    get_text('measured_value'): data.get('result', 0),
+                    get_text('normal_range'): f"{min_norm} - {max_norm}",
+                    get_text('status'): status_text
+                })
+            
+            # Create and display the DataFrame
+            df = pd.DataFrame(diagnostic_data)
+            st.dataframe(df, use_container_width=True)
+        
+        # Display chakra impact analysis
+        if 'chakra_energy' in analysis:
+            st.write(f"**{get_text('chakra_impact')}:**")
+            st.write(get_text('estimated_impact'))
+            
+            # Display chakra energy values
+            for chakra_name, energy_value in analysis['chakra_energy'].items():
+                chakra_name_display = next((c['name_ru'] if st.session_state.language == 'ru' else c['name'] 
+                                          for c in chakra_data if c['name'] == chakra_name), chakra_name)
+                
+                # Get color for this chakra
+                chakra_color = next((c['color_hex'] for c in chakra_data if c['name'] == chakra_name), "#CCCCCC")
+                
+                # Create a colored dot with the chakra name and energy level
+                st.markdown(
+                    f"<div style='display: flex; align-items: center;'>"
+                    f"<div style='background-color: {chakra_color}; width: 15px; height: 15px; border-radius: 50%; margin-right: 10px;'></div>"
+                    f"<span><b>{chakra_name_display}</b>: {energy_value:.1f}%</span>"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
+        
+        # Add button to return to manual mode
+        if st.button(get_text("use_manual_values")):
+            st.session_state.report_processed = False
+            st.session_state.report_analysis = None
+            st.rerun()
 
 # Divider
 st.markdown("---")
