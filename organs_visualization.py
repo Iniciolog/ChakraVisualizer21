@@ -76,7 +76,7 @@ class OrgansVisualizer:
                 'damaged': 'поврежденный',
                 'no_data': 'нет данных',
                 'legend_title': 'Состояние органов:',
-                'hover_text': 'Наведите на орган для получения информации'
+                'hover_text': 'Выберите орган из списка для получения информации'
             },
             'en': {
                 'title': 'Organs Status Visualization',
@@ -86,7 +86,7 @@ class OrgansVisualizer:
                 'damaged': 'damaged',
                 'no_data': 'no data',
                 'legend_title': 'Organs status:',
-                'hover_text': 'Hover over an organ for details'
+                'hover_text': 'Select an organ from the dropdown for details'
             }
         }
     
@@ -267,8 +267,9 @@ class OrgansVisualizer:
         Returns:
             fig: Matplotlib фигура с визуализацией
         """
-        # Создаем фигуру и оси с соотношением сторон соответствующим анатомическому изображению
-        fig, ax = plt.subplots(figsize=(8, 14))
+        # Создаем фигуру и оси с соотношением сторон соответствующим новому анатомическому изображению
+        # Новое изображение ближе к квадратному формату, поэтому меняем пропорции
+        fig, ax = plt.subplots(figsize=(10, 12))
         
         # Устанавливаем название
         ax.set_title(self.translations[self.lang]['title'], fontsize=16)
@@ -287,10 +288,7 @@ class OrgansVisualizer:
         ax.set_ylim(0, 1)
         ax.axis('off')
         
-        # Добавляем подсказку внизу
-        ax.text(0.5, 0.02, self.translations[self.lang]['hover_text'], 
-                ha='center', va='center', fontsize=10, style='italic',
-                bbox=dict(facecolor='white', alpha=0.7, edgecolor='gray', boxstyle='round,pad=0.5'))
+        # Убираем подсказку о наведении, так как у нас теперь нет интерактивных элементов на изображении
         
         # Сохраняем ссылки на патчи органов для интерактивности в Streamlit
         fig.organ_patches = organ_patches

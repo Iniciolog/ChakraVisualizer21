@@ -400,7 +400,8 @@ if st.session_state.report_processed and st.session_state.report_analysis:
     st.markdown(get_text("organ_visualization_info"))
     
     # Создаем две колонки: одна для визуализации, другая для деталей
-    organ_col1, organ_col2 = st.columns([3, 2])
+    # Используем другую пропорцию для лучшего отображения нового изображения 
+    organ_col1, organ_col2 = st.columns([2, 1])
     
     with organ_col1:
         # Инициализируем визуализатор органов
