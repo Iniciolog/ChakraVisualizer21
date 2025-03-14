@@ -208,7 +208,9 @@ app_text = {
         "no_data_organ": "No data available",
         "organ_detail_header": "Organ Details",
         "related_parameters": "Related Diagnostic Parameters",
-        "select_organ": "Click on an organ for details"
+        "select_organ": "Select an organ from the dropdown",
+        "organ_detail_image": "Detailed organ view",
+        "no_detailed_image": "Detailed image not available for this organ"
     },
     "ru": {
         "page_title": "AURA STUDIO",
@@ -274,6 +276,8 @@ app_text = {
         "no_data_organ": "Нет данных",
         "organ_detail_header": "Информация об Органе",
         "related_parameters": "Связанные Диагностические Параметры",
-        "select_organ": "Выберите орган для просмотра подробностей"
+        "select_organ": "Выберите орган для просмотра подробностей",
+        "organ_detail_image": "Детальное изображение органа",
+        "no_detailed_image": "Детальное изображение для этого органа отсутствует"
     }
 }
