@@ -70,7 +70,19 @@ class OrganDetailVisualizer:
         Returns:
             bool: True, если есть изображение, иначе False
         """
-        return organ_name in self.organ_images and os.path.exists(self.organ_images[organ_name])
+        has_image_key = organ_name in self.organ_images
+        if not has_image_key:
+            print(f"DEBUG: Орган '{organ_name}' отсутствует в словаре изображений")
+            return False
+            
+        image_path = self.organ_images[organ_name]
+        file_exists = os.path.exists(image_path)
+        if not file_exists:
+            print(f"DEBUG: Файл изображения не найден по пути: {image_path}")
+        else:
+            print(f"DEBUG: Файл изображения найден по пути: {image_path}")
+            
+        return has_image_key and file_exists
     
     def _add_glow_effect(self, ax, organ_status: str):
         """
@@ -123,32 +135,48 @@ class OrganDetailVisualizer:
         Returns:
             matplotlib.figure.Figure: Фигура с изображением органа и свечением
         """
-        fig, ax = plt.subplots(figsize=(8, 8))
+        print(f"DEBUG: create_organ_detail_view вызван для органа: {organ_name}, статус: {organ_status}")
         
-        # Устанавливаем название
-        title = f"{self.translations[self.lang]['title']}: {organ_name}"
-        ax.set_title(title, fontsize=16)
-        
-        # Проверяем наличие изображения
-        if not self.has_detailed_image(organ_name):
-            ax.text(0.5, 0.5, self.translations[self.lang]['no_image'], 
-                    ha='center', va='center', fontsize=14)
+        try:
+            fig, ax = plt.subplots(figsize=(8, 8))
+            
+            # Устанавливаем название
+            title = f"{self.translations[self.lang]['title']}: {organ_name}"
+            ax.set_title(title, fontsize=16)
+            
+            # Проверяем наличие изображения
+            if not self.has_detailed_image(organ_name):
+                print(f"DEBUG: Изображение не найдено для {organ_name}")
+                ax.text(0.5, 0.5, self.translations[self.lang]['no_image'], 
+                        ha='center', va='center', fontsize=14)
+                ax.axis('off')
+                plt.tight_layout()
+                return fig
+            
+            print(f"DEBUG: Изображение найдено для {organ_name}, добавляем эффект свечения")
+            # Добавляем слои свечения (под изображением)
+            self._add_glow_effect(ax, organ_status)
+            
+            # Загружаем изображение органа
+            img_path = self.organ_images[organ_name]
+            print(f"DEBUG: Пытаемся загрузить изображение из {img_path}")
+            img = mpimg.imread(img_path)
+            print(f"DEBUG: Изображение успешно загружено, размер: {img.shape}")
+            
+            # Показываем изображение
+            ax.imshow(img, extent=[0, 1, 0, 1], aspect='auto')
+            print(f"DEBUG: Изображение успешно добавлено на график")
+            
+            # Отключаем оси
             ax.axis('off')
+            
             plt.tight_layout()
+            print(f"DEBUG: Фигура успешно создана для {organ_name}")
             return fig
-        
-        # Добавляем слои свечения (под изображением)
-        self._add_glow_effect(ax, organ_status)
-        
-        # Загружаем изображение органа
-        img_path = self.organ_images[organ_name]
-        img = mpimg.imread(img_path)
-        
-        # Показываем изображение
-        ax.imshow(img, extent=[0, 1, 0, 1], aspect='auto')
-        
-        # Отключаем оси
-        ax.axis('off')
-        
-        plt.tight_layout()
-        return fig
+        except Exception as e:
+            print(f"DEBUG: ОШИБКА при создании изображения органа: {e}")
+            # В случае ошибки, создаем фигуру с текстом ошибки
+            fig, ax = plt.subplots(figsize=(8, 8))
+            ax.text(0.5, 0.5, f"Ошибка: {str(e)}", ha='center', va='center', fontsize=14, color='red')
+            ax.axis('off')
+            return fig
