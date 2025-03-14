@@ -414,11 +414,65 @@ if st.session_state.report_processed and st.session_state.report_analysis:
             # Сохраняем ссылку на объект визуализатора в session_state, если он еще не существует
             if 'organ_visualizer' not in st.session_state:
                 st.session_state.organ_visualizer = organ_visualizer
+            
+            # Сохраняем орган, который будет выделен на визуализации (для подсветки при наведении)
+            if 'highlighted_organ' not in st.session_state:
+                st.session_state.highlighted_organ = None
                 
-            # Показываем визуализацию
+            # Показываем визуализацию с подписями
             st.pyplot(organ_fig)
             
-            # Добавляем интерактивные возможности (выбор органа)
+            # Добавляем интерактивную карту органов под изображением
+            st.markdown("""
+            <style>
+            .organ-button {
+                display: inline-block;
+                margin: 3px;
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-size: 0.9em;
+                cursor: pointer;
+                text-align: center;
+                transition: all 0.3s;
+            }
+            .organ-button:hover {
+                transform: scale(1.05);
+                box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            }
+            </style>
+            <div style="margin-top: 10px; text-align: center;">
+            """, unsafe_allow_html=True)
+            
+            # Добавляем клик-кнопки для быстрого выбора органов
+            organ_buttons_html = ""
+            
+            for organ_name in organ_visualizer.organs_positions.keys():
+                # Определяем статус органа для цветового выделения кнопки
+                status = organ_visualizer._determine_organ_status(organ_name, diagnostic_data)
+                
+                # Выбираем цвет для кнопки на основе статуса органа
+                if status == "no_data":
+                    button_color = "#CCCCCC"  # серый для органов без данных
+                else:
+                    # Конвертируем RGBA в HEX
+                    rgba_color = organ_visualizer.organ_status_colors[status]
+                    r, g, b, a = rgba_color
+                    r, g, b = int(r*255), int(g*255), int(b*255)
+                    button_color = f"#{r:02x}{g:02x}{b:02x}"
+                
+                # Создаем кнопку для этого органа
+                organ_buttons_html += f"""
+                <div class="organ-button" 
+                    style="background-color: {button_color}; color: {'white' if status in ['damaged', 'inflamed'] else 'black'};"
+                    onclick="document.getElementById('organ_selector').value='{organ_name}';
+                            document.querySelector('button[type=\'submit\'][form=\'organ_selector\']').click();">
+                    {organ_name}
+                </div>
+                """
+            
+            st.markdown(organ_buttons_html + "</div>", unsafe_allow_html=True)
+            
+            # Добавляем интерактивные возможности (выбор органа из списка)
             if 'selected_organ' not in st.session_state:
                 st.session_state.selected_organ = None
                 
