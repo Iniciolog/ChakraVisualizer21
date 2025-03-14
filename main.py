@@ -7,6 +7,7 @@ from assets.chakra_info import chakra_data, app_text
 import utils
 from diagnostic_analyzer import DiagnosticReportAnalyzer
 from organs_visualization import OrgansVisualizer
+from organ_detail_visualization import OrganDetailVisualizer
 
 # Initialize session state for language and view mode
 if 'language' not in st.session_state:
@@ -449,6 +450,11 @@ if st.session_state.report_processed and st.session_state.report_analysis:
         if st.session_state.selected_organ and 'organ_visualizer' in st.session_state:
             # Получаем информацию о выбранном органе
             if 'diagnostic_data' in st.session_state.report_analysis:
+                # Инициализируем визуализатор детальных изображений органов, если он еще не существует
+                if 'organ_detail_visualizer' not in st.session_state:
+                    st.session_state.organ_detail_visualizer = OrganDetailVisualizer(st.session_state.language)
+                
+                # Получаем информацию о выбранном органе
                 organ_details = st.session_state.organ_visualizer.get_organ_status_description(
                     st.session_state.selected_organ, 
                     st.session_state.report_analysis['diagnostic_data']
@@ -477,6 +483,17 @@ if st.session_state.report_processed and st.session_state.report_analysis:
                     unsafe_allow_html=True
                 )
                 
+                # Проверяем, есть ли детальное изображение для этого органа
+                if st.session_state.organ_detail_visualizer.has_detailed_image(organ_details['organ']):
+                    # Создаем детальное изображение органа со свечением
+                    organ_detail_fig = st.session_state.organ_detail_visualizer.create_organ_detail_view(
+                        organ_details['organ'], 
+                        organ_details['status']
+                    )
+                    
+                    # Показываем детальное изображение
+                    st.pyplot(organ_detail_fig)
+                    
                 # Показываем связанные параметры
                 if organ_details['parameters']:
                     st.markdown(f"**{get_text('related_parameters')}:**")
