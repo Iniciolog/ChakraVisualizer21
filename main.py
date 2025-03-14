@@ -360,8 +360,8 @@ with col1:
             unsafe_allow_html=True
         )
         
-        # Добавим отладочную информацию
-        st.write(f"Текущее значение {chakra_name}: {st.session_state.energy_values[chakra_name]}")
+        # Показываем текущее значение
+        st.write(f"{get_text('current_energy')}: {st.session_state.energy_values[chakra_name]}%")
         
         # Create slider for this chakra
         energy_value = st.slider(
