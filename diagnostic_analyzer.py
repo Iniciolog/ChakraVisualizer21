@@ -66,7 +66,7 @@ class DiagnosticReportAnalyzer:
                 
             return text
         except Exception as e:
-            print(f"Ошибка при извлечении текста из PDF: {e}")
+            # Если возникла ошибка при обработке PDF
             return ""
     
     def extract_client_info(self, text: str) -> Dict[str, str]:
@@ -173,8 +173,8 @@ class DiagnosticReportAnalyzer:
                     diagnostic_data[parameter]['position'] = position
                 
             except Exception as e:
-                print(f"Ошибка при обработке параметра {parameter}: {e}")
-                
+                # Ошибка при обработке параметра просто пропускается
+                pass
         return diagnostic_data
     
     def map_to_chakras(self, diagnostic_data: Dict[str, Dict[str, Any]]) -> Dict[str, float]:
@@ -292,14 +292,8 @@ class DiagnosticReportAnalyzer:
                     "clamped_value": chakra_energy[chakra]
                 }
         
-        # Выводим отладочную информацию
-        print("\n--- ОТЛАДОЧНАЯ ИНФОРМАЦИЯ О ПРЕОБРАЗОВАНИИ ДАННЫХ ДИАГНОСТИКИ В ЭНЕРГИЮ ЧАКР ---")
-        print(f"Найдено параметров диагностики: {len(diagnostic_data)}")
-        print(f"Параметры, влияющие на чакры: {len(debug_info)}")
-        print("\nИтоговые значения энергии чакр:")
-        for chakra, energy in chakra_energy.items():
-            print(f"{chakra}: {energy:.2f}")
-        print("-" * 80)
+        # Отладочная информация заменена на комментарий
+        # Подробную информацию можно добавить в возвращаемый словарь при необходимости
         
         return chakra_energy
     
