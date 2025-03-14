@@ -201,15 +201,32 @@ class DiagnosticReportAnalyzer:
         # Общее влияние параметров на чакры
         chakra_influence_count = {chakra: 0.0 for chakra in chakra_energy.keys()}
         
+        # Отладочная информация
+        debug_info = {}
+        
         # Обработка каждого параметра диагностики
         for param, data in diagnostic_data.items():
             if param in self.parameter_to_chakra_mapping:
                 # Получаем связанные чакры и их веса
                 chakra_weights = self.parameter_to_chakra_mapping[param]
                 
+                # Отладочная информация для этого параметра
+                param_debug = {
+                    "status": data.get('status', 'unknown'),
+                    "value": data.get('result', 0),
+                    "normal_range": data.get('normal_range', (0, 0)),
+                    "affected_chakras": {}
+                }
+                
                 for chakra_name, weight in chakra_weights:
                     # Суммируем влияние (вес) параметра на чакру
                     chakra_influence_count[chakra_name] += weight
+                    
+                    # Добавляем в отладочную информацию
+                    param_debug["affected_chakras"][chakra_name] = {
+                        "weight": weight,
+                        "initial_energy": chakra_energy[chakra_name]
+                    }
                     
                     # Если параметр в норме, используем его позицию в диапазоне нормы
                     if data.get('status') == 'normal':
@@ -222,6 +239,13 @@ class DiagnosticReportAnalyzer:
                         energy_factor = 1.0 - abs(position - 50) / 50  # от 0.0 до 1.0
                         energy_value = 70 + (energy_factor * 30)  # от 70 до 100
                         
+                        # Отладочная информация
+                        param_debug["energy_calculation"] = {
+                            "position": position,
+                            "energy_factor": energy_factor,
+                            "energy_value": energy_value
+                        }
+                        
                     else:
                         # Если параметр отклоняется от нормы, уменьшаем энергию чакры
                         deviation = abs(data.get('deviation', 0))
@@ -232,17 +256,50 @@ class DiagnosticReportAnalyzer:
                         
                         # Высокое отклонение дает низкое значение энергии
                         energy_value = max(0, 100 - capped_deviation)
+                        
+                        # Отладочная информация
+                        param_debug["energy_calculation"] = {
+                            "deviation": deviation,
+                            "capped_deviation": capped_deviation,
+                            "energy_value": energy_value
+                        }
                     
                     # Применяем влияние этого параметра на чакру с учетом веса
-                    chakra_energy[chakra_name] -= (100 - energy_value) * weight
+                    energy_reduction = (100 - energy_value) * weight
+                    chakra_energy[chakra_name] -= energy_reduction
+                    
+                    # Отладочная информация
+                    param_debug["affected_chakras"][chakra_name]["energy_reduction"] = energy_reduction
+                    param_debug["affected_chakras"][chakra_name]["new_energy"] = chakra_energy[chakra_name]
+                
+                # Сохраняем отладочную информацию для этого параметра
+                debug_info[param] = param_debug
         
         # Корректируем финальные значения, чтобы они были в диапазоне 0-100
         for chakra in chakra_energy:
+            original_value = chakra_energy[chakra]
             # Если были параметры, влияющие на эту чакру
             if chakra_influence_count[chakra] > 0:
                 # Нормализуем значение энергии
                 chakra_energy[chakra] = max(0, min(100, chakra_energy[chakra]))
-            # Если не было параметров, влияющих на эту чакру, оставляем значение по умолчанию
+                
+                # Отладочная информация
+                if chakra not in debug_info:
+                    debug_info[chakra] = {}
+                debug_info[f"final_{chakra}"] = {
+                    "influence_count": chakra_influence_count[chakra],
+                    "original_value": original_value,
+                    "clamped_value": chakra_energy[chakra]
+                }
+        
+        # Выводим отладочную информацию
+        print("\n--- ОТЛАДОЧНАЯ ИНФОРМАЦИЯ О ПРЕОБРАЗОВАНИИ ДАННЫХ ДИАГНОСТИКИ В ЭНЕРГИЮ ЧАКР ---")
+        print(f"Найдено параметров диагностики: {len(diagnostic_data)}")
+        print(f"Параметры, влияющие на чакры: {len(debug_info)}")
+        print("\nИтоговые значения энергии чакр:")
+        for chakra, energy in chakra_energy.items():
+            print(f"{chakra}: {energy:.2f}")
+        print("-" * 80)
         
         return chakra_energy
     
