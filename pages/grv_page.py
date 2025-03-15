@@ -244,3 +244,43 @@ if 'chakra_values_from_grv' in st.session_state:
         else:  # 3D mode
             fig_3d = create_chakra_visualization_3d(chakra_values, st.session_state.language)
             st.plotly_chart(fig_3d, use_container_width=True, height=700)
+            
+        # Добавляем кнопку для создания фото с аурой
+        if st.button("📸 " + (
+                "Сделать фото ауры" if st.session_state.language == 'ru' else "Take Aura Photo"
+            )):
+            # Переключаем на режим фотографии
+            st.session_state.aura_photo_mode = True
+            st.rerun()
+
+# Если включен режим фотографии с аурой, показываем интерфейс для фото
+if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
+    st.markdown("---")  # Разделитель
+    
+    # Используем данные из ГРВ камеры для фото ауры
+    if 'chakra_values_from_grv' in st.session_state:
+        st.success("Используются данные ГРВ-сканирования для создания ауры" if st.session_state.language == 'ru' else 
+                  "Using GRV scanning data to create aura")
+        
+        # Копируем значения из ГРВ для фото ауры
+        grv_energy_values = {k: float(v) for k, v in st.session_state.chakra_values_from_grv.items()}
+        # Используем локальную переменную для ГРВ, чтобы избежать влияния на основное приложение
+        st.session_state.grv_aura_values = grv_energy_values
+        
+        # Показываем значения для отладки в сайдбаре
+        st.sidebar.markdown("### GRV Chakra Energy Values")
+        for chakra_name, energy_value in grv_energy_values.items():
+            st.sidebar.text(f"{chakra_name}: {energy_value}")
+        
+        # Используем значения чакр из ГРВ для создания фото
+        capture_aura_photo(st.session_state.grv_aura_values, st.session_state.language)
+    else:
+        # Если нет данных ГРВ, показываем сообщение
+        st.warning("Необходимо провести ГРВ-сканирование для создания фото ауры", icon="⚠️")
+    
+    # Кнопка для возврата к основному режиму
+    if st.button("↩️ " + (
+            "Вернуться к основному режиму" if st.session_state.language == 'ru' else "Return to main mode"
+        )):
+        st.session_state.aura_photo_mode = False
+        st.rerun()

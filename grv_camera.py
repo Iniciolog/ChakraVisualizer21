@@ -959,8 +959,7 @@ def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: Finge
 def display_grv_interface(lang: str = 'ru'):
     """
     Отображение интерфейса для работы с ГРВ-изображениями в Streamlit.
-    Упрощенная версия для работы только с загрузкой файлов ГРВ-грамм без подключения к физической камере.
-    Удалены функции фото ауры и просмотра органов из раздела ГРВ.
+    Обновленная версия для работы только с загрузкой файлов ГРВ-грамм без подключения к физической камере.
     
     Args:
         lang (str): Язык интерфейса ('ru' или 'en')
@@ -1074,11 +1073,14 @@ def display_grv_interface(lang: str = 'ru'):
     st.subheader("Анализ и управление данными" if lang == 'ru' else "Analysis and Data Management")
     col1, col2, col3 = st.columns(3)
     
-    # Кнопка для отображения базовой визуализации, доступна если данные уже есть в session_state
-    if "chakra_values_from_grv" in st.session_state and col3.button("Показать визуализацию" if lang == 'ru' else "Show visualization", key="button_show_viz_main"):
+    # Кнопка для отображения полной визуализации, доступна если данные уже есть в session_state
+    if "chakra_values_from_grv" in st.session_state and col3.button("Показать полную визуализацию" if lang == 'ru' else "Show full visualization", key="button_show_full_viz_main"):
         # Импортируем модули для визуализации
         from chakra_visualization import create_chakra_visualization
         from chakra_visualization_3d import create_chakra_visualization_3d
+        from aura_photo import capture_aura_photo
+        from organs_visualization import OrgansVisualizer
+        from organ_detail_visualization import OrganDetailVisualizer
         
         # Берем данные из session_state
         energy_values = st.session_state.chakra_values_from_grv
@@ -1093,6 +1095,118 @@ def display_grv_interface(lang: str = 'ru'):
         fig_3d = create_chakra_visualization_3d(energy_values, lang)
         st.plotly_chart(fig_3d, use_container_width=True)
         
+        # Добавляем опцию для создания фото с аурой
+        st.subheader("Фото с аурой" if lang == 'ru' else "Aura Photo")
+        st.markdown(
+            "Вы можете сделать фото с камеры и наложить на него ауру, соответствующую вашему энергетическому состоянию."
+            if lang == 'ru' else
+            "You can take a photo from the camera and overlay an aura corresponding to your energy state."
+        )
+        
+        if st.button("Сделать фото с аурой" if lang == 'ru' else "Take aura photo", key="button_aura_photo_analysis"):
+            # Создаем фото с аурой
+            capture_aura_photo(energy_values, lang)
+            
+        # Добавляем визуализацию здоровья органов
+        st.subheader("Визуализация здоровья органов" if lang == 'ru' else "Organs Health Visualization")
+        st.markdown(
+            "Визуализация состояния внутренних органов на основе данных ГРВ-сканирования."
+            if lang == 'ru' else
+            "Visualization of internal organs health based on GRV scanning data."
+        )
+        
+        # Создаем данные для визуализации органов
+        # Преобразуем данные из энергий чакр в данные для диагностики
+        diagnostic_data = {}
+        
+        # Отображение энергии чакр в параметры органов
+        organ_param_mapping = {
+            "Вязкость крови": energy_values.get("Root", 50) * 0.8 / 100,
+            "Общий Холестерин": energy_values.get("Sacral", 50) * 0.7 / 100,
+            "Липиды": energy_values.get("Solar Plexus", 50) * 0.75 / 100,
+            "Сосудистое сопротивление": energy_values.get("Heart", 50) * 0.9 / 100,
+            "Эластичность кровеносных сосудов": energy_values.get("Throat", 50) * 0.8 / 100,
+            "Потребность миокарда в крови": energy_values.get("Heart", 50) * 0.85 / 100,
+            "Объем перфузии крови в миокарде": energy_values.get("Heart", 50) * 0.9 / 100,
+            "Объем потребления кислорода миокардом": energy_values.get("Throat", 50) * 0.8 / 100,
+            "Ударный объем": energy_values.get("Heart", 50) * 0.9 / 100,
+            "Сопротивление выбросу крови из левого желудочка": energy_values.get("Heart", 50) * 0.85 / 100,
+            "Эластичность коронарных артерий": energy_values.get("Heart", 50) * 0.8 / 100,
+            "Сила выброса левого желудочка": energy_values.get("Heart", 50) * 0.85 / 100,
+            "Перфузионное давление коронарных артерий": energy_values.get("Heart", 50) * 0.8 / 100,
+            "Эластичность церебральных сосудов": energy_values.get("Third Eye", 50) * 0.85 / 100,
+            "Состояние кровоснабжения мозга": energy_values.get("Crown", 50) * 0.9 / 100
+        }
+        
+        # Формируем словарь диагностических данных
+        for param_name, param_value in organ_param_mapping.items():
+            diagnostic_data[param_name] = {
+                "value": param_value,
+                "normal_min": 0.6,
+                "normal_max": 0.9,
+                "critical_min": 0.3,
+                "critical_max": 1.0
+            }
+        
+        # Создаем визуализатор органов и отображаем
+        organs_visualizer = OrgansVisualizer(lang)
+        fig_organs = organs_visualizer.create_organs_visualization(diagnostic_data)
+        st.pyplot(fig_organs)
+        
+        # Добавляем выбор органа для подробной информации
+        st.subheader("Детальная информация об органе" if lang == 'ru' else "Detailed Organ Information")
+        
+        # Список доступных органов
+        organs = [
+            "Головной мозг", "Сердце", "Легкие", "Печень", "Желудок", 
+            "Поджелудочная железа", "Кишечник", "Почки", "Мочевой пузырь", 
+            "Щитовидная железа", "Селезенка", "Надпочечники"
+        ]
+        
+        # Выбор органа
+        selected_organ = st.selectbox(
+            "Выберите орган для детальной информации:" if lang == 'ru' else 
+            "Select organ for detailed information:",
+            organs
+        )
+        
+        # Получаем информацию о статусе органа
+        organ_status_info = organs_visualizer.get_organ_status_description(selected_organ, diagnostic_data)
+        
+        # Отображаем информацию
+        if organ_status_info:
+            st.markdown(f"**Статус:** {organ_status_info['status_label']}")
+            st.markdown(f"**Параметры:**")
+            
+            for param_info in organ_status_info['parameters']:
+                param_name = param_info['name']
+                param_value = param_info['result']
+                min_norm, max_norm = param_info['normal_range']
+                
+                # Нормализуем значение для прогресс-бара
+                normalized_value = min(1.0, max(0.0, param_value / 100.0))
+                st.progress(normalized_value)
+                
+                # Проверяем статус параметра
+                if param_info['status'] == 'critical_low':
+                    st.warning(f"{param_name}: {param_value:.2f} - Ниже нормы")
+                elif param_info['status'] == 'critical_high':
+                    st.warning(f"{param_name}: {param_value:.2f} - Выше нормы")
+                elif param_info['status'] == 'normal':
+                    st.success(f"{param_name}: {param_value:.2f} - В норме")
+                else:
+                    st.info(f"{param_name}: {param_value:.2f} - Пограничное значение")
+            
+            # Детальная визуализация органа
+            detail_visualizer = OrganDetailVisualizer(lang)
+            if detail_visualizer.has_detailed_image(selected_organ):
+                st.subheader(f"Визуализация органа: {selected_organ}")
+                fig_detail = detail_visualizer.create_organ_detail_view(
+                    selected_organ, 
+                    organ_status_info['status']
+                )
+                st.pyplot(fig_detail)
+                
     # Кнопка анализа
     if col1.button("Анализировать" if lang == 'ru' else "Analyze"):
         # Проверяем, все ли пальцы отсканированы
@@ -1145,8 +1259,20 @@ def display_grv_interface(lang: str = 'ru'):
                     st.success("Данные обработаны и готовы к использованию в основном приложении." if lang == 'ru' else 
                              "Data processed and ready for use in the main application.")
                     
-                    # Добавляем кнопку для создания и отображения базовой визуализации
-                    if st.button("Показать визуализацию" if lang == 'ru' else "Show Visualization", key="button_show_viz_analysis"):
+                    # Добавляем кнопку для создания и отображения полной визуализации
+                    if st.button("Показать полную визуализацию" if lang == 'ru' else "Show Full Visualization", key="button_show_full_viz_analysis"):
+                        # Показываем визуализацию ауры
+                        st.subheader("Визуализация ауры" if lang == 'ru' else "Aura Visualization")
+                        
+                        # Используем функцию из aura_photo для создания изображения ауры
+                        from aura_photo import create_aura_only, overlay_aura_on_photo
+                        
+                        # Создаем только изображение ауры
+                        aura_img = create_aura_only(energy_model["chakra_values"], width=600, height=800)
+                        
+                        # Выводим изображение ауры
+                        st.image(aura_img, caption="Аура" if lang == 'ru' else "Aura", use_column_width=True)
+                        
                         # Визуализация чакр
                         st.subheader("Визуализация чакр" if lang == 'ru' else "Chakra Visualization")
                         
@@ -1156,6 +1282,51 @@ def display_grv_interface(lang: str = 'ru'):
                         # Создаем визуализацию чакр
                         fig_chakra = create_chakra_visualization(energy_model["chakra_values"], lang)
                         st.pyplot(fig_chakra)
+                        
+                        # Визуализация органов
+                        st.subheader("Состояние органов" if lang == 'ru' else "Organs State")
+                        
+                        # Используем функцию из organs_visualization
+                        from organs_visualization import OrgansVisualizer
+                        
+                        # Тут мы конвертируем значения чакр в диагностические данные для органов
+                        # Это упрощенная версия для демонстрации
+                        diagnostic_data = {}
+                        
+                        # Создаем простое отображение на основании энергии чакр
+                        for param, mapping in DiagnosticReportAnalyzer.parameter_to_chakra_mapping.items():
+                            # Рассчитываем значение параметра на основе энергии чакр
+                            param_value = 0
+                            weight_sum = 0
+                            
+                            for chakra_name, weight in mapping:
+                                if chakra_name in energy_model["chakra_values"]:
+                                    param_value += energy_model["chakra_values"][chakra_name] * weight
+                                    weight_sum += weight
+                            
+                            if weight_sum > 0:
+                                param_value = param_value / weight_sum
+                                
+                                # Определяем статус на основе значения
+                                status = "normal"
+                                if param_value < 40:
+                                    status = "low"
+                                elif param_value > 80:
+                                    status = "high"
+                                
+                                # Записываем данные
+                                diagnostic_data[param] = {
+                                    "result": param_value,
+                                    "normal_range": (40, 80),
+                                    "status": status
+                                }
+                        
+                        # Создаем визуализатор органов
+                        organs_viz = OrgansVisualizer(lang)
+                        
+                        # Создаем визуализацию органов
+                        fig_organs = organs_viz.create_organs_visualization(diagnostic_data)
+                        st.pyplot(fig_organs)
                         
                         # Добавляем детальную информацию о чакрах
                         st.subheader("Детальная информация о чакрах" if lang == 'ru' else "Detailed Chakra Information")
@@ -1169,6 +1340,14 @@ def display_grv_interface(lang: str = 'ru'):
                                 st.write(f"**Энергия:** {details['energy']:.1f}%")
                                 st.write(f"**Состояние:** {details['status']}")
                                 st.write(f"**Описание:** {details['description']}")
+                        
+                        # Добавляем возможность сохранить результаты в PDF
+                        st.download_button(
+                            "Сохранить отчет (PDF)" if lang == 'ru' else "Save Report (PDF)",
+                            data="PDF Report Coming Soon",  # Здесь будет PDF
+                            file_name="energy_report.pdf",
+                            mime="application/pdf"
+                        )
     
     # Блок для сохранения и загрузки сессии
     st.subheader("Сохранение и загрузка сессии" if lang == 'ru' else "Save and Load Session")
@@ -1286,11 +1465,12 @@ def display_grv_interface(lang: str = 'ru'):
                         f"{balance_index:.2f}%"
                     )
                     
-                    # Добавляем кнопку для отображения визуализации
-                    if st.button("Показать визуализацию" if lang == 'ru' else "Show visualization", key="button_show_viz_load"):
+                    # Добавляем кнопку для отображения полной визуализации
+                    if st.button("Показать полную визуализацию" if lang == 'ru' else "Show full visualization", key="button_show_full_viz_load"):
                         # Импортируем модули для визуализации
                         from chakra_visualization import create_chakra_visualization
                         from chakra_visualization_3d import create_chakra_visualization_3d
+                        from aura_photo import capture_aura_photo
                         
                         # Создаем 2D визуализацию чакр
                         st.subheader("2D Визуализация чакр" if lang == 'ru' else "2D Chakra Visualization")
@@ -1300,7 +1480,26 @@ def display_grv_interface(lang: str = 'ru'):
                         # Создаем 3D визуализацию чакр
                         st.subheader("3D Визуализация чакр" if lang == 'ru' else "3D Chakra Visualization")
                         fig_3d = create_chakra_visualization_3d(energy_values, lang)
-                        st.plotly_chart(fig_3d, use_container_width=True)                            "Visualization of internal organs health based on GRV scanning data."
+                        st.plotly_chart(fig_3d, use_container_width=True)
+                        
+                        # Добавляем опцию для создания фото с аурой
+                        st.subheader("Фото с аурой" if lang == 'ru' else "Aura Photo")
+                        st.markdown(
+                            "Вы можете сделать фото с камеры и наложить на него ауру, соответствующую вашему энергетическому состоянию."
+                            if lang == 'ru' else
+                            "You can take a photo from the camera and overlay an aura corresponding to your energy state."
+                        )
+                        
+                        if st.button("Сделать фото с аурой" if lang == 'ru' else "Take aura photo", key="button_aura_photo_main"):
+                            # Создаем фото с аурой
+                            capture_aura_photo(energy_values, lang)
+                            
+                        # Добавляем визуализацию здоровья органов
+                        st.subheader("Визуализация здоровья органов" if lang == 'ru' else "Organs Health Visualization")
+                        st.markdown(
+                            "Визуализация состояния внутренних органов на основе данных ГРВ-сканирования."
+                            if lang == 'ru' else
+                            "Visualization of internal organs health based on GRV scanning data."
                         )
                         
                         # Импортируем модуль для визуализации органов
