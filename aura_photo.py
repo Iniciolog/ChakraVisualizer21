@@ -271,18 +271,70 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
     with buttons_container:
         cols = st.columns(2)
         
-        if not st.session_state.camera_active and not st.session_state.photo_taken:
-            # Кнопка запуска камеры без перезагрузки всего приложения
+        # 1. Показываем начальные опции (камера/загрузка), если фото еще не сделано и камера не активна
+        if not st.session_state.photo_taken and not st.session_state.camera_active:
+            # Заголовок для выбора способа
+            st.markdown(f"### {t['select_option']}")
+            
+            # Кнопка для активации камеры
             start_button = cols[0].button(t['start'], key='start_camera')
             if start_button:
-                # Обновляем сохраненные значения энергии перед активацией камеры
+                # Обновляем сохраненные значения энергии
                 st.session_state.saved_energy_values = energy_values
                 st.session_state.camera_active = True
+                st.session_state.upload_active = False
+                st.rerun()
+            
+            # Отображаем разделитель между опциями
+            st.markdown(f"#### {t['upload_option']}")
+            
+            # Виджет загрузки изображения
+            uploaded_file = st.file_uploader(
+                t['upload_button'], 
+                type=['jpg', 'jpeg', 'png'],
+                help=t['upload_help'],
+                key='uploaded_image'
+            )
+            
+            # Обрабатываем загруженное изображение
+            if uploaded_file is not None:
+                try:
+                    # Отмечаем, что пользователь выбрал загрузку
+                    st.session_state.upload_active = True
+                    
+                    # Загружаем и обрабатываем изображение
+                    image = Image.open(uploaded_file)
+                    img_array = np.array(image)
+                    
+                    # Отображаем информацию о загруженном изображении
+                    print(f"Загружено изображение размером: {img_array.shape}")
+                    
+                    # Генерируем изображение ауры
+                    with st.spinner(t['processing']):
+                        # Используем сохраненные значения энергии чакр
+                        aura_img = create_aura_only(
+                            energy_values, 
+                            width=img_array.shape[1], 
+                            height=img_array.shape[0]
+                        )
+                        
+                        # Накладываем ауру на фото
+                        result_img = overlay_aura_on_photo(img_array, aura_img)
+                        
+                        # Сохраняем результат
+                        st.session_state.result_image = result_img
+                        st.session_state.photo_taken = True
+                        st.rerun()  # Перезапускаем для отображения результата
+                except Exception as e:
+                    import traceback
+                    st.error(f"Ошибка при обработке загруженного изображения: {str(e)}")
+                    st.error(traceback.format_exc())
         
+        # 2. Если камера активна, показываем интерфейс для фотографирования
         elif st.session_state.camera_active and not st.session_state.photo_taken:
             if cols[0].button(t['capture'], key='take_photo'):
                 try:
-                    # Получаем изображение из camera_input, которое было показано в camera_container
+                    # Получаем изображение из camera_input
                     if "camera_live" in st.session_state and st.session_state["camera_live"] is not None:
                         # Извлекаем изображение из сессии
                         img_file_buffer = st.session_state["camera_live"]
@@ -297,7 +349,6 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                             
                             # Генерируем изображение ауры
                             with st.spinner(t['processing']):
-                                # Используем сохраненные значения энергии чакр
                                 # Создаем ауру с сохраненными значениями энергии
                                 aura_img = create_aura_only(st.session_state.saved_energy_values, 
                                                            width=img_array.shape[1], 
@@ -307,10 +358,10 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                                 result_img = overlay_aura_on_photo(img_array, aura_img)
                                 
                                 # Сохраняем результат
-                                # Сохраняем результат без вызова st.rerun()
                                 st.session_state.result_image = result_img
                                 st.session_state.photo_taken = True
                                 st.session_state.camera_active = False
+                                st.rerun()
                         else:
                             st.error("Не удалось получить изображение с камеры")
                     else:
@@ -320,22 +371,23 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                     st.error(f"Ошибка: {str(e)}")
                     st.error(traceback.format_exc())
         
+        # 3. После создания фото показываем кнопки для повторения/скачивания
         elif st.session_state.photo_taken:
-            # Используем те же колонки, что и раньше
             # Кнопка "Сделать новое фото" в первой колонке
             retry_button = cols[0].button(t['retry'], key='new_photo')
             if retry_button:
-                # Очищаем текущее фото и активируем камеру
+                # Очищаем текущее фото и сбрасываем все флаги
                 st.session_state.photo_taken = False
-                st.session_state.camera_active = True
+                st.session_state.camera_active = False
+                st.session_state.upload_active = False
                 st.session_state.result_image = None
-                # Используем rerun для обновления интерфейса
+                # Используем rerun для обновления интерфейса и возврата к выбору опций
                 st.rerun()
             
             # Кнопка "Скачать фото" во второй колонке
             if st.session_state.result_image is not None:
                 try:
-                    # Подготавливаем изображение для скачивания сразу
+                    # Подготавливаем изображение для скачивания
                     result_img = st.session_state.result_image
                     max_dimension = 1200
                     
@@ -366,7 +418,7 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                     # Сбрасываем указатель буфера в начало
                     buf.seek(0)
                     
-                    # Показываем кнопку скачивания сразу
+                    # Показываем кнопку скачивания
                     cols[1].download_button(
                         label=t['download'],
                         data=buf.getvalue(),
