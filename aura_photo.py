@@ -115,21 +115,23 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
                     # Учитываем энергию чакры
                     energy_factor = energy_values_float[chakra] / 100.0
                     
-                    # Проверяем, что точка находится в пределах горизонтального распространения ауры чакры
-                    # Чем больше энергия чакры, тем дальше распространяется её аура от тела
-                    max_dist_for_chakra = chakra_radius[chakra]
-                    
-                    if body_dist <= max_dist_for_chakra:
-                        # Рассчитываем горизонтальный вес в зависимости от удаления от тела
-                        # и энергии чакры
-                        horiz_weight = 1.0 - (body_dist / max_dist_for_chakra)
+                    # ВАЖНО: Если энергия чакры равна 0, она не должна влиять на ауру
+                    if energy_factor > 0:
+                        # Проверяем, что точка находится в пределах горизонтального распространения ауры чакры
+                        # Чем больше энергия чакры, тем дальше распространяется её аура от тела
+                        max_dist_for_chakra = chakra_radius[chakra]
                         
-                        # Общий вес этой чакры для данной точки
-                        chakra_weight = vert_weight * horiz_weight * energy_factor
-                        
-                        if chakra_weight > 0.01:  # Минимальный порог влияния
-                            chakra_weights[chakra] = chakra_weight
-                            total_distance_weight += chakra_weight
+                        if body_dist <= max_dist_for_chakra:
+                            # Рассчитываем горизонтальный вес в зависимости от удаления от тела
+                            # и энергии чакры
+                            horiz_weight = 1.0 - (body_dist / max_dist_for_chakra)
+                            
+                            # Общий вес этой чакры для данной точки
+                            chakra_weight = vert_weight * horiz_weight * energy_factor
+                            
+                            if chakra_weight > 0.01:  # Минимальный порог влияния
+                                chakra_weights[chakra] = chakra_weight
+                                total_distance_weight += chakra_weight
             
             # Нормализуем веса, чтобы сумма всех весов была 1
             if total_distance_weight > 0:
@@ -235,9 +237,10 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
         cols = st.columns(2)
         
         if not st.session_state.camera_active and not st.session_state.photo_taken:
-            if cols[0].button(t['start'], key='start_camera'):
+            # Кнопка запуска камеры без перезагрузки всего приложения
+            start_button = cols[0].button(t['start'], key='start_camera')
+            if start_button:
                 st.session_state.camera_active = True
-                st.rerun()
         
         elif st.session_state.camera_active and not st.session_state.photo_taken:
             if cols[0].button(t['capture'], key='take_photo'):
@@ -266,10 +269,10 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                                 result_img = overlay_aura_on_photo(img_array, aura_img)
                                 
                                 # Сохраняем результат
+                                # Сохраняем результат без вызова st.rerun()
                                 st.session_state.result_image = result_img
                                 st.session_state.photo_taken = True
                                 st.session_state.camera_active = False
-                                st.rerun()
                         else:
                             st.error("Не удалось получить изображение с камеры")
                     else:
@@ -280,10 +283,14 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                     st.error(traceback.format_exc())
         
         elif st.session_state.photo_taken:
-            if cols[0].button(t['retry'], key='new_photo'):
+            # Кнопка "Сделать новое фото" без использования st.rerun(),
+            # чтобы избежать перезагрузки всего приложения
+            retry_button = cols[0].button(t['retry'], key='new_photo')
+            if retry_button:
+                # Очищаем текущее фото и активируем камеру
                 st.session_state.photo_taken = False
                 st.session_state.camera_active = True
-                st.rerun()
+                st.session_state.result_image = None
             
             if st.session_state.result_image is not None:
                 # Конвертируем изображение для скачивания
