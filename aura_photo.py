@@ -386,10 +386,18 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                                 # Накладываем ауру на фото
                                 result_img = overlay_aura_on_photo(img_array, aura_img)
                                 
-                                # Сохраняем результат
+                                # Сохраняем результат и всю важную информацию о состоянии
                                 st.session_state.result_image = result_img
                                 st.session_state.photo_taken = True
                                 st.session_state.camera_active = False
+                                
+                                # Обеспечиваем сохранение важных переменных сессии перед перезапуском
+                                if 'energy_values' in st.session_state:
+                                    st.session_state.saved_energy_values_backup = st.session_state.energy_values.copy()
+                                if 'chakra_values_from_grv' in st.session_state:
+                                    st.session_state.chakra_values_from_grv_backup = st.session_state.chakra_values_from_grv.copy()
+                                    
+                                # Перезапускаем с сохраненными данными
                                 st.rerun()
                         else:
                             st.error("Не удалось получить изображение с камеры")
