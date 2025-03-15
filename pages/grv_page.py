@@ -17,13 +17,13 @@ from assets.chakra_info import chakra_data, app_text
 
 # Настройка страницы
 st.set_page_config(
-    page_title="GRV Lab | KIRLIAN PLATFORM",
+    page_title="GRV AURA STUDIO",
     page_icon="🔮",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
         'About': """
-        ### GRV Lab | KIRLIAN PLATFORM
+        ### GRV AURA STUDIO
         **Разработано в НИЦ Инициологии и трансперсональной психологии**
         
         Streamlit v1.43.1
@@ -118,8 +118,8 @@ with st.sidebar:
         st.info(get_text("view_3d_help"))
 
 # Заголовок страницы
-st.title("GRV Lab | KIRLIAN PLATFORM")
-st.markdown("Лаборатория газоразрядной визуализации (ГРВ) и анализа энергетического поля человека")
+st.title("GRV AURA STUDIO")
+st.markdown("Приложение для газоразрядной визуализации (ГРВ) и анализа энергетического поля человека")
 
 # Клиентская информация
 st.header(get_text("client_info_header"))
