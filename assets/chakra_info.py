@@ -218,7 +218,30 @@ app_text = {
         "related_parameters": "Related Diagnostic Parameters",
         "select_organ": "Select an organ from the dropdown",
         "organ_detail_image": "Detailed organ view",
-        "no_detailed_image": "Detailed image not available for this organ"
+        "no_detailed_image": "Detailed image not available for this organ",
+        
+        # GRV Camera
+        "grv_tab_header": "GRV Scanning",
+        "grv_tab_info": "Scan fingers using GRV camera to analyze energy state of chakras and organs.",
+        "grv_connect": "Connect to GRV Camera",
+        "grv_disconnect": "Disconnect GRV Camera",
+        "grv_not_found": "GRV camera not found. Please connect the device and click 'Connect'.",
+        "grv_connected": "GRV camera connected successfully.",
+        "grv_scan_fingers": "Scan Fingers",
+        "grv_hand_left": "Left Hand",
+        "grv_hand_right": "Right Hand",
+        "grv_calibrate": "Calibrate Camera",
+        "grv_start_scan": "Start Scanning",
+        "grv_scan_progress": "Scanning Progress",
+        "grv_analysis_results": "GRV Analysis Results",
+        "grv_save_results": "Save Results",
+        "grv_load_session": "Load Previously Saved Session",
+        "grv_thumb": "Thumb",
+        "grv_index": "Index",
+        "grv_middle": "Middle",
+        "grv_ring": "Ring",
+        "grv_pinky": "Pinky",
+        "grv_use_doc": "Refer to GRV-TBK 3.3 documentation for proper finger scanning procedure."
     },
     "ru": {
         "page_title": "AURA STUDIO",
@@ -294,6 +317,29 @@ app_text = {
         "related_parameters": "Связанные Диагностические Параметры",
         "select_organ": "Выберите орган для просмотра подробностей",
         "organ_detail_image": "Детальное изображение органа",
-        "no_detailed_image": "Детальное изображение для этого органа отсутствует"
+        "no_detailed_image": "Детальное изображение для этого органа отсутствует",
+        
+        # ГРВ-камера
+        "grv_tab_header": "ГРВ Сканирование",
+        "grv_tab_info": "Сканирование пальцев с помощью ГРВ-камеры для анализа энергетического состояния чакр и органов.",
+        "grv_connect": "Подключиться к ГРВ-камере",
+        "grv_disconnect": "Отключиться от ГРВ-камеры",
+        "grv_not_found": "ГРВ-камера не найдена. Пожалуйста, подключите устройство и нажмите 'Подключиться'.",
+        "grv_connected": "ГРВ-камера подключена успешно.",
+        "grv_scan_fingers": "Сканирование пальцев",
+        "grv_hand_left": "Левая рука",
+        "grv_hand_right": "Правая рука",
+        "grv_calibrate": "Калибровка камеры",
+        "grv_start_scan": "Начать сканирование",
+        "grv_scan_progress": "Прогресс сканирования",
+        "grv_analysis_results": "Результаты ГРВ-анализа",
+        "grv_save_results": "Сохранить результаты",
+        "grv_load_session": "Загрузить ранее сохраненную сессию",
+        "grv_thumb": "Большой",
+        "grv_index": "Указательный",
+        "grv_middle": "Средний",
+        "grv_ring": "Безымянный",
+        "grv_pinky": "Мизинец",
+        "grv_use_doc": "Используйте документацию ГРВ-ТБК 3.3 для правильного сканирования пальцев."
     }
 }
