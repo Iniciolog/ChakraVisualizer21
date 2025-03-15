@@ -691,12 +691,7 @@ if st.session_state.report_processed and st.session_state.report_analysis:
         else:
             st.info(get_text("select_organ"))
 
-# Добавляем информацию о отдельной странице с ГРВ-сканированием
-st.info(
-    "💡 Для работы с ГРВ-диагностикой перейдите на отдельную страницу 'GRV Page' в меню навигации слева." 
-    if st.session_state.language == 'ru' else 
-    "💡 For GRV diagnostics, go to the 'GRV Page' in the navigation menu on the left."
-)
+# Информация о ГРВ удалена для разделения функциональности
 
 # Divider
 st.markdown("---")
