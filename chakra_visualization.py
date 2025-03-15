@@ -16,6 +16,11 @@ def create_chakra_visualization(energy_values, language='en'):
     Returns:
     matplotlib.figure.Figure: Figure containing the visualization
     """
+    # Отладка: напечатаем значения энергии чакр, которые получены функцией
+    print("DEBUG: create_chakra_visualization() получил следующие энергетические значения:")
+    for name, value in energy_values.items():
+        print(f"  {name}: {value}")
+    
     # Create the figure and axis
     fig, ax = plt.subplots(figsize=(10, 15), facecolor='black')
     

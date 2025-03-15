@@ -374,6 +374,11 @@ with col2:
     st.header(get_text("visual_header"))
     
     # Create the chakra visualization based on current energy values and view mode
+    # Отладочная информация - посмотрим значения энергии чакр
+    st.sidebar.markdown("### Debug: Chakra Energy Values")
+    for chakra_name, energy_value in st.session_state.energy_values.items():
+        st.sidebar.text(f"{chakra_name}: {energy_value}")
+    
     if st.session_state.view_mode == '2d':
         fig = create_chakra_visualization(st.session_state.energy_values, st.session_state.language)
         st.pyplot(fig)
