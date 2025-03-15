@@ -254,7 +254,10 @@ def draw_biofield(ax, energy_values):
         else:
             blended_color = [0, 0, 0]  # Defaults to black if no energy
         
+        # Ensure colors are in the 0-1 range required by matplotlib
+        normalized_color = [min(c/255, 1.0) for c in blended_color]
+        
         # Create the ellipse for this layer
         ellipse = Ellipse((center_x, center_y), layer_width, layer_height, 
-                         color=tuple(c/255 for c in blended_color), alpha=alpha, zorder=5-i)
+                         color=tuple(normalized_color), alpha=alpha, zorder=5-i)
         ax.add_patch(ellipse)
