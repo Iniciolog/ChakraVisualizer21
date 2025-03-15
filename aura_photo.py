@@ -18,6 +18,9 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
     Returns:
         np.ndarray: Изображение ауры с прозрачным фоном (RGBA)
     """
+    # Выводим входные значения энергии для отладки
+    print(f"Входные значения энергии: {energy_values}")
+    
     # Создаем пустое изображение с прозрачностью
     aura = np.zeros((height, width, 4), dtype=np.uint8)
     
@@ -38,36 +41,47 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
     # Преобразуем все значения энергии в float для безопасного вычисления
     energy_values_float = {k: float(v) for k, v in energy_values.items()}
     
-    # Определяем вертикальные позиции чакр (относительные координаты по оси Y)
-    # Значения соответствуют положению чакр в теле человека от низа (0) до верха (1)
-    # ВАЖНО: В изображении координата Y = 0 соответствует верху, а Y = height соответствует низу
-    # поэтому нужно инвертировать позиции для правильного отображения
-    chakra_positions = {
-        "Root": 0.85,         # Муладхара - самая нижняя (должна быть внизу изображения)
-        "Sacral": 0.75,       # Свадхистана - ниже пупка
-        "Solar Plexus": 0.65, # Манипура - солнечное сплетение
-        "Heart": 0.50,        # Анахата - область сердца (середина)
-        "Throat": 0.35,       # Вишудха - горловой центр
-        "Third Eye": 0.20,    # Аджна - третий глаз, между бровями
-        "Crown": 0.05         # Сахасрара - верхушка головы (должна быть вверху изображения)
-    }
+    # Определяем порядок слоев ауры от внутреннего к внешнему
+    # Это определит, какие чакры будут формировать внутренние и внешние слои
+    aura_layers = [
+        "Root",         # Муладхара - ближайший к телу слой
+        "Sacral",       # Свадхистана - второй слой
+        "Solar Plexus", # Манипура - третий слой
+        "Heart",        # Анахата - четвертый слой
+        "Throat",       # Вишудха - пятый слой
+        "Third Eye",    # Аджна - шестой слой
+        "Crown"         # Сахасрара - самый внешний слой
+    ]
     
-    # Рассчитываем радиус ауры для каждой чакры на основании её энергии
-    # Чем выше энергия чакры, тем дальше будет распространяться её аура
-    chakra_radius = {}
-    base_radius = min(width, height) * 0.5  # Базовый радиус ауры
+    # Рассчитываем толщину слоев ауры в зависимости от энергии чакры
+    # Чем выше энергия чакры, тем толще её слой
+    max_aura_width = min(width, height) * 0.35  # Максимальная ширина всей ауры
     
-    for chakra, energy in energy_values_float.items():
-        # Вычисляем радиус ауры от 30% до 100% от базового радиуса
-        chakra_radius[chakra] = base_radius * (0.3 + 0.7 * energy / 100.0)
+    layer_widths = {}
+    layer_start_distances = {}
+    current_distance = 0.0
+    
+    # Определяем ширину каждого слоя и начальное расстояние от тела
+    for layer in aura_layers:
+        # Если энергия чакры нулевая, её слой не должен влиять на ауру
+        if energy_values_float[layer] <= 0:
+            layer_widths[layer] = 0
+        else:
+            # Вычисляем ширину слоя на основе энергии (от 3% до 15% от макс. ширины)
+            layer_widths[layer] = max_aura_width * (0.03 + 0.12 * energy_values_float[layer] / 100.0)
+        
+        # Записываем начальное расстояние для слоя
+        layer_start_distances[layer] = current_distance
+        # Увеличиваем общее расстояние для следующего слоя
+        current_distance += layer_widths[layer]
     
     # Проходим по всем пикселям изображения
     for y in range(height):
         for x in range(width):
-            # Преобразуем координаты в относительные (0-1) для сравнения с позициями чакр
+            # Используем форму гуманоидной ауры - более широкая в плечах, сужается к голове и ногам
+            # Рассчитываем относительную высоту
             rel_y = y / height
             
-            # Используем форму гуманоидной ауры - более широкая в плечах, сужается к голове и ногам
             # Вычисляем базовую ширину силуэта на разной высоте
             if rel_y < 0.2:  # Ноги
                 body_width = 0.15
@@ -91,89 +105,49 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
             # Преобразуем в абсолютное расстояние
             body_dist = body_dist * width
             
-            # Для каждой чакры рассчитываем влияние в зависимости от её позиции и энергии
-            chakra_weights = {}
-            total_distance_weight = 0
+            # Определяем, в каком слое ауры находится текущая точка
+            current_layer = None
+            layer_position = 0.0  # Позиция внутри слоя (от 0 до 1)
             
-            # Определяем ближайшую чакру по вертикали и её влияние
-            for chakra, pos_y in chakra_positions.items():
-                # Преобразуем позицию чакры в абсолютные координаты
-                chakra_y = int(pos_y * height)
+            for layer in aura_layers:
+                layer_start = layer_start_distances[layer]
+                layer_width = layer_widths[layer]
                 
-                # Вычисляем расстояние по вертикали до чакры
-                vert_distance = abs(y - chakra_y)
+                # Если у слоя нулевая ширина, пропускаем
+                if layer_width <= 0:
+                    continue
+                    
+                layer_end = layer_start + layer_width
                 
-                # Вертикальное влияние убывает с расстоянием
-                # Используем гауссово распределение для плавного убывания
-                max_vert_dist = height * 0.3  # Максимальное расстояние влияния по вертикали
-                if vert_distance < max_vert_dist:
-                    # Нормализуем расстояние
-                    norm_dist = vert_distance / max_vert_dist
-                    # Гауссова функция убывания влияния с расстоянием
-                    vert_weight = np.exp(-5 * norm_dist * norm_dist)
-                    
-                    # Учитываем энергию чакры
-                    energy_factor = energy_values_float[chakra] / 100.0
-                    
-                    # ВАЖНО: Если энергия чакры равна 0, она не должна влиять на ауру
-                    if energy_factor > 0:
-                        # Проверяем, что точка находится в пределах горизонтального распространения ауры чакры
-                        # Чем больше энергия чакры, тем дальше распространяется её аура от тела
-                        max_dist_for_chakra = chakra_radius[chakra]
-                        
-                        if body_dist <= max_dist_for_chakra:
-                            # Рассчитываем горизонтальный вес в зависимости от удаления от тела
-                            # и энергии чакры
-                            horiz_weight = 1.0 - (body_dist / max_dist_for_chakra)
-                            
-                            # Общий вес этой чакры для данной точки
-                            chakra_weight = vert_weight * horiz_weight * energy_factor
-                            
-                            if chakra_weight > 0.01:  # Минимальный порог влияния
-                                chakra_weights[chakra] = chakra_weight
-                                total_distance_weight += chakra_weight
+                # Если точка находится в этом слое
+                if body_dist >= layer_start and body_dist < layer_end:
+                    current_layer = layer
+                    # Позиция внутри слоя (от 0 до 1)
+                    layer_position = (body_dist - layer_start) / layer_width
+                    break
             
-            # Нормализуем веса, чтобы сумма всех весов была 1
-            if total_distance_weight > 0:
-                for chakra in chakra_weights:
-                    chakra_weights[chakra] /= total_distance_weight
+            # Если точка находится за пределами всех слоев ауры, делаем её прозрачной
+            if current_layer is None:
+                continue
             
-            # Отбираем чакры с ненулевым влиянием
-            chakra_influence = list(chakra_weights.keys())
+            # Вычисляем базовый цвет текущего слоя
+            base_color = chakra_colors[current_layer]
             
-            # Вычисляем цвет на основе влияния чакр
-            color = [0, 0, 0]
-            weight_sum = 0.0
+            # Рассчитываем плавное затухание от центра слоя к краям
+            # Максимальная непрозрачность в центре слоя, уменьшается к краям
+            # Используем гауссово распределение для плавного перехода
+            # Позиция 0.5 соответствует середине слоя
+            alpha_factor = np.exp(-5.0 * ((layer_position - 0.5) ** 2))
             
-            # Используем веса, рассчитанные по позиции и энергии чакр
-            for chakra in chakra_influence:
-                weight = chakra_weights[chakra] if chakra in chakra_weights else 0
-                weight_sum += weight
-                color[0] += chakra_colors[chakra][0] * weight
-                color[1] += chakra_colors[chakra][1] * weight
-                color[2] += chakra_colors[chakra][2] * weight
+            # Базовая непрозрачность зависит от энергии чакры
+            base_opacity = 180 * (energy_values_float[current_layer] / 100.0)
             
-            if weight_sum > 0:
-                color = [int(c / weight_sum) for c in color]
-            else:
-                # Если нет весов, используем средний цвет всех чакр
-                color = [128, 128, 128]  # серый
+            # Итоговая непрозрачность с учетом позиции в слое
+            opacity = int(base_opacity * alpha_factor)
             
-            # Альфа-канал определяет прозрачность (уменьшается к краю ауры)
-            # Чем дальше от силуэта, тем прозрачнее
-            if body_dist <= 0:
-                alpha = int(255 * 0.7)  # Максимальная непрозрачность 70%
-            else:
-                # Находим максимальный радиус для всех активных чакр
-                max_chakra_radius = max([chakra_radius[c] for c in chakra_influence]) if chakra_influence else base_radius
-                alpha_factor = 1.0 - (body_dist / max_chakra_radius)
-                if alpha_factor < 0:
-                    alpha = 0
-                else:
-                    alpha = int(255 * alpha_factor * 0.7)
-            
-            # Устанавливаем цвет пикселя
-            aura[y, x] = [color[0], color[1], color[2], alpha]
+            # Устанавливаем цвет и прозрачность для текущего пикселя
+            aura[y, x, 0:3] = base_color
+            aura[y, x, 3] = opacity
     
     return aura
 
@@ -283,11 +257,9 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                     st.error(traceback.format_exc())
         
         elif st.session_state.photo_taken:
-            # Создаем две колонки для кнопок
-            col1, col2 = st.columns(2)
-            
+            # Используем те же колонки, что и раньше
             # Кнопка "Сделать новое фото" в первой колонке
-            retry_button = col1.button(t['retry'], key='new_photo')
+            retry_button = cols[0].button(t['retry'], key='new_photo')
             if retry_button:
                 # Очищаем текущее фото и активируем камеру
                 st.session_state.photo_taken = False
@@ -298,51 +270,50 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
             
             # Кнопка "Скачать фото" во второй колонке
             if st.session_state.result_image is not None:
-                # Показываем кнопку скачивания отдельно, чтобы избежать проблем
-                download_button = col2.button(t['download'], key='download_button')
-                if download_button:
-                    try:
-                        # Весь код для подготовки изображения к скачиванию
-                        result_img = st.session_state.result_image
-                        max_dimension = 1200
+                try:
+                    # Подготавливаем изображение для скачивания сразу
+                    result_img = st.session_state.result_image
+                    max_dimension = 1200
+                    
+                    height, width = result_img.shape[:2]
+                    if width > max_dimension or height > max_dimension:
+                        if width > height:
+                            new_width = max_dimension
+                            new_height = int(height * (max_dimension / width))
+                        else:
+                            new_height = max_dimension
+                            new_width = int(width * (max_dimension / height))
                         
-                        height, width = result_img.shape[:2]
-                        if width > max_dimension or height > max_dimension:
-                            if width > height:
-                                new_width = max_dimension
-                                new_height = int(height * (max_dimension / width))
-                            else:
-                                new_height = max_dimension
-                                new_width = int(width * (max_dimension / height))
-                            
-                            result_img = cv2.resize(result_img, (new_width, new_height))
-                        
-                        # Преобразуем в PIL Image
-                        result_pil = Image.fromarray(result_img)
-                        
-                        # JPEG не поддерживает альфа-канал
-                        if result_pil.mode == 'RGBA':
-                            background = Image.new('RGB', result_pil.size, (255, 255, 255))
-                            background.paste(result_pil, mask=result_pil.split()[3])
-                            result_pil = background
-                        
-                        # Сохраняем во временный файл
-                        temp_file = "temp_aura_photo.jpg"
-                        result_pil.save(temp_file, format="JPEG", quality=85)
-                        
-                        # Открываем файл и предлагаем для скачивания
-                        with open(temp_file, "rb") as file:
-                            col2.download_button(
-                                label="Скачать сейчас",
-                                data=file,
-                                file_name="aura_photo.jpg",
-                                mime="image/jpeg",
-                                key='actual_download'
-                            )
-                    except Exception as e:
-                        import traceback
-                        st.error(f"Ошибка при подготовке изображения для скачивания: {str(e)}")
-                        st.error(traceback.format_exc())
+                        result_img = cv2.resize(result_img, (new_width, new_height))
+                    
+                    # Преобразуем в PIL Image
+                    result_pil = Image.fromarray(result_img)
+                    
+                    # JPEG не поддерживает альфа-канал
+                    if result_pil.mode == 'RGBA':
+                        background = Image.new('RGB', result_pil.size, (255, 255, 255))
+                        background.paste(result_pil, mask=result_pil.split()[3])
+                        result_pil = background
+                    
+                    # Сохраняем в буфер памяти
+                    buf = io.BytesIO()
+                    result_pil.save(buf, format="JPEG", quality=85)
+                    
+                    # Сбрасываем указатель буфера в начало
+                    buf.seek(0)
+                    
+                    # Показываем кнопку скачивания сразу
+                    cols[1].download_button(
+                        label=t['download'],
+                        data=buf.getvalue(),
+                        file_name="aura_photo.jpg",
+                        mime="image/jpeg",
+                        key='download_photo'
+                    )
+                except Exception as e:
+                    import traceback
+                    st.error(f"Ошибка при подготовке изображения для скачивания: {str(e)}")
+                    st.error(traceback.format_exc())
     
     # Показываем камеру или результат
     if st.session_state.camera_active:
