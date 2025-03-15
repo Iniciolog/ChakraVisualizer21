@@ -65,25 +65,53 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
                 angle = np.arctan2(dy, dx)
                 angle_deg = (np.degrees(angle) + 360) % 360
                 
-                # Вычисляем, какая чакра оказывает наибольшее влияние на данный угол
-                # Смещаем углы, чтобы нижние чакры были внизу, а верхние вверху
-                chakra_influence = ["Root", "Sacral"]  # По умолчанию
+                # Используем более плавную модель влияния чакр в зависимости от угла,
+                # чтобы создать более мягкие переходы между цветами
                 
-                if 225 <= angle_deg <= 315:  # Нижняя часть ауры 
-                    chakra_influence = ["Root", "Sacral"]
-                elif (315 < angle_deg <= 360) or (0 <= angle_deg < 45):  # Правая часть
-                    chakra_influence = ["Sacral", "Solar Plexus", "Heart"]
-                elif 45 <= angle_deg < 135:  # Верхняя часть ауры
-                    chakra_influence = ["Throat", "Third Eye", "Crown"]
-                elif 135 <= angle_deg < 225:  # Левая часть
-                    chakra_influence = ["Heart", "Solar Plexus", "Sacral"]
+                # Определяем центры влияния каждой чакры (в градусах)
+                chakra_centers = {
+                    "Root": 270,        # внизу
+                    "Sacral": 315,      # внизу-справа
+                    "Solar Plexus": 0,  # справа
+                    "Heart": 45,        # справа-вверху
+                    "Throat": 90,       # вверху
+                    "Third Eye": 135,   # вверху-слева
+                    "Crown": 180        # слева
+                }
                 
-                # Вычисляем цвет на основе влияния чакр
+                # Вычисляем влияние каждой чакры на основе близости угла к центру чакры
+                # Максимальное влияние будет 0..1, чем ближе угол к центру чакры, тем больше влияние
+                chakra_weights = {}
+                max_angular_distance = 90  # максимальное угловое расстояние, после которого влияние = 0
+                
+                for chakra, center in chakra_centers.items():
+                    # Вычисляем кратчайшее угловое расстояние между углом и центром чакры (0-180)
+                    angular_distance = min(abs(angle_deg - center), 360 - abs(angle_deg - center))
+                    
+                    # Применяем плавную косинусную интерполяцию для влияния
+                    if angular_distance < max_angular_distance:
+                        # Косинусная интерполяция: 1 в центре, плавно убывает к 0
+                        weight = np.cos(angular_distance * np.pi / max_angular_distance) * 0.5 + 0.5
+                        chakra_weights[chakra] = weight * energy_values_float[chakra] / 100.0
+                    else:
+                        chakra_weights[chakra] = 0
+                
+                # Отбираем чакры с ненулевым влиянием
+                chakra_influence = [chakra for chakra, weight in chakra_weights.items() if weight > 0]
+                
+                # Если ни одна чакра не имеет влияния, берем ближайшую
+                if not chakra_influence:
+                    closest_chakra = min(chakra_centers.items(), 
+                                        key=lambda x: min(abs(angle_deg - x[1]), 360 - abs(angle_deg - x[1])))[0]
+                    chakra_influence = [closest_chakra]
+                
+                # Вычисляем цвет на основе влияния чакр с учетом весов из косинусной интерполяции
                 color = [0, 0, 0]
                 weight_sum = 0.0
                 
+                # Используем веса, рассчитанные на основе углового расстояния
                 for chakra in chakra_influence:
-                    weight = energy_values_float[chakra] / 100.0
+                    weight = chakra_weights[chakra] if chakra in chakra_weights else 0
                     weight_sum += weight
                     color[0] += chakra_colors[chakra][0] * weight
                     color[1] += chakra_colors[chakra][1] * weight
@@ -91,6 +119,9 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
                 
                 if weight_sum > 0:
                     color = [int(c / weight_sum) for c in color]
+                else:
+                    # Если нет весов, используем средний цвет всех чакр
+                    color = [128, 128, 128]  # серый
                 
                 # Альфа-канал определяет прозрачность (уменьшается к краю ауры)
                 # Вычисляем плавную прозрачность на основе расстояния от центра
@@ -234,7 +265,7 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
         result_container.image(
             st.session_state.result_image, 
             caption=t['result'],
-            use_column_width=True
+            use_container_width=True
         )
 
 def overlay_aura_on_photo(photo: np.ndarray, aura: np.ndarray) -> np.ndarray:
