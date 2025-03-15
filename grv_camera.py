@@ -866,6 +866,16 @@ def display_grv_interface(lang: str = 'ru'):
     Args:
         lang (str): Язык интерфейса ('ru' или 'en')
     """
+    # Сбрасываем флаг загрузки сессии при новом рендеринге страницы
+    # Но делаем это только если этот рендеринг не был вызван загрузкой сессии
+    if 'session_loaded' in st.session_state and st.session_state.session_loaded:
+        # Если сессия была загружена, оставляем флаг,
+        # чтобы избежать бесконечной перезагрузки
+        pass
+    else:
+        # Сбрасываем флаг session_loaded
+        st.session_state.session_loaded = False
+        
     st.title("Анализ ГРВ-грамм" if lang == 'ru' else "GRV-gram Analysis")
     
     # Показываем информацию о работе с загрузкой снимков
@@ -1171,8 +1181,11 @@ def display_grv_interface(lang: str = 'ru'):
                     f"Session successfully loaded from file {uploaded_session.name}"
                 )
                 
-                # Обновляем интерфейс для отображения загруженных данных
-                st.rerun()
+                # Устанавливаем флаг, что сессия загружена
+                if 'session_loaded' not in st.session_state:
+                    st.session_state.session_loaded = True
+                    # Перезагружаем страницу только один раз после загрузки
+                    st.rerun()
             else:
                 st.error(
                     "Ошибка при загрузке сессии" if lang == 'ru' else 
