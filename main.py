@@ -670,16 +670,30 @@ if st.session_state.report_processed and st.session_state.report_analysis:
     with organ_col2:
         if st.session_state.selected_organ and 'organ_visualizer' in st.session_state:
             # Получаем информацию о выбранном органе
-            if 'diagnostic_data' in st.session_state.report_analysis:
-                # Инициализируем визуализатор детальных изображений органов, если он еще не существует
-                if 'organ_detail_visualizer' not in st.session_state:
-                    st.session_state.organ_detail_visualizer = OrganDetailVisualizer(st.session_state.language)
-                
-                # Получаем информацию о выбранном органе
-                organ_details = st.session_state.organ_visualizer.get_organ_status_description(
-                    st.session_state.selected_organ, 
-                    st.session_state.report_analysis['diagnostic_data']
-                )
+            if ('diagnostic_data' in st.session_state.report_analysis and 
+                isinstance(st.session_state.report_analysis['diagnostic_data'], dict) and 
+                st.session_state.report_analysis['diagnostic_data']):
+                try:
+                    # Инициализируем визуализатор детальных изображений органов, если он еще не существует
+                    if 'organ_detail_visualizer' not in st.session_state:
+                        st.session_state.organ_detail_visualizer = OrganDetailVisualizer(st.session_state.language)
+                    
+                    # Получаем информацию о выбранном органе с обработкой ошибок
+                    organ_details = st.session_state.organ_visualizer.get_organ_status_description(
+                        st.session_state.selected_organ, 
+                        st.session_state.report_analysis['diagnostic_data']
+                    )
+                except Exception as e:
+                    st.error(f"Ошибка при получении данных об органе: {e}")
+                    # Устанавливаем орган в None, чтобы пользователь мог выбрать другой
+                    st.session_state.selected_organ = None
+                    # Задаем пустые детали органа как запасной вариант
+                    organ_details = {
+                        'organ': st.session_state.selected_organ,
+                        'status': 'no_data',
+                        'status_label': get_text('no_data_organ'),
+                        'parameters': []
+                    }
                 
                 # Определяем цвет для статуса органа
                 status_colors = {
