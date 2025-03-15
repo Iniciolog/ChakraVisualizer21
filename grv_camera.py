@@ -142,6 +142,35 @@ class GRVCamera:
         # Используем русский язык по умолчанию, если запрошенный язык не поддерживается
         self.t = self.t.get(self.lang, self.t['ru'])
     
+    def list_available_cameras(self) -> Dict[int, str]:
+        """
+        Получает список всех доступных камер в системе
+        
+        Returns:
+            Dict[int, str]: Словарь с индексами и описаниями доступных камер
+        """
+        available_cameras = {}
+        try:
+            # Проверяем первые 10 индексов (обычно достаточно)
+            for i in range(10):
+                cap = cv2.VideoCapture(i)
+                if cap.isOpened():
+                    # Для настоящего ГРВ-устройства здесь можно получить информацию о производителе и модели
+                    # Для эмуляции просто добавляем индекс камеры
+                    camera_info = f"Camera #{i}"
+                    available_cameras[i] = camera_info
+                cap.release()
+                
+            if not available_cameras:
+                print("Камеры не найдены")
+            else:
+                print(f"Найдено камер: {len(available_cameras)}")
+                
+        except Exception as e:
+            print(f"Ошибка при поиске камер: {e}")
+            
+        return available_cameras
+
     def find_camera(self) -> bool:
         """
         Поиск доступной ГРВ-камеры
@@ -152,19 +181,24 @@ class GRVCamera:
         # В реальном сценарии здесь будет код для обнаружения специфичной ГРВ-камеры
         # по идентификаторам USB и т.д.
         
-        # Для демонстрации просто ищем любую доступную камеру
-        for i in range(10):  # Проверяем устройства от 0 до 9
-            try:
-                cap = cv2.VideoCapture(i)
-                if cap.isOpened():
-                    cap.release()
-                    self.camera_id = i
-                    print(f"Найдена камера с ID {i}")
-                    return True
-            except Exception as e:
-                print(f"Ошибка при проверке устройства {i}: {e}")
+        # Получаем список всех доступных камер
+        available_cameras = self.list_available_cameras()
         
-        return False
+        if not available_cameras:
+            print("ГРВ-камера не найдена")
+            return False
+        
+        # Сохраняем список камер для выбора пользователем
+        self.available_cameras = available_cameras
+        
+        # Если найдена только одна камера, выбираем ее автоматически
+        if len(available_cameras) == 1:
+            self.camera_id = list(available_cameras.keys())[0]
+            print(f"Автоматически выбрана камера с ID {self.camera_id}")
+            return True
+            
+        # Если найдено несколько камер, будем предлагать пользователю выбрать в интерфейсе
+        return True
     
     def connect(self) -> bool:
         """
@@ -178,8 +212,19 @@ class GRVCamera:
         
         # Находим камеру, если ID еще не определен
         if self.camera_id is None:
-            if not self.find_camera():
+            # Получаем список доступных камер
+            available_cameras = self.list_available_cameras()
+            
+            if not available_cameras:
                 print("ГРВ-камера не найдена")
+                return False
+                
+            # Если есть только одна камера, используем ее
+            if len(available_cameras) == 1:
+                self.camera_id = list(available_cameras.keys())[0]
+            else:
+                # Если несколько камер, нужен выбор пользователя через интерфейс
+                print("Доступно несколько камер, выберите одну через интерфейс")
                 return False
         
         try:
@@ -607,14 +652,54 @@ def display_grv_interface(lang: str = 'ru'):
     
     # Подключение/отключение камеры
     if not grv.connected:
-        if col1.button(grv.t['connect']):
-            if grv.connect():
-                st.success(grv.t['connected'])
-            else:
-                st.error(grv.t['no_camera'])
+        # Поиск доступных камер
+        if 'camera_search_done' not in st.session_state or not st.session_state.camera_search_done:
+            with st.spinner("Поиск доступных устройств..." if lang == 'ru' else "Searching for available devices..."):
+                available_cameras = grv.list_available_cameras()
+                st.session_state.available_cameras = available_cameras
+                st.session_state.camera_search_done = True
+        
+        # Отображение списка доступных камер, если они найдены
+        if hasattr(st.session_state, 'available_cameras') and st.session_state.available_cameras:
+            available_cameras = st.session_state.available_cameras
+            
+            # Преобразуем в формат для selectbox
+            camera_options = [f"{camera_info} (ID: {camera_id})" for camera_id, camera_info in available_cameras.items()]
+            camera_ids = list(available_cameras.keys())
+            
+            # Отображаем выбор устройства
+            selected_option = st.selectbox(
+                "Выберите устройство:" if lang == 'ru' else "Select device:", 
+                options=camera_options
+            )
+            
+            # Получаем ID выбранной камеры
+            selected_index = camera_options.index(selected_option)
+            selected_camera_id = camera_ids[selected_index]
+            
+            # Сохраняем выбранную камеру
+            grv.camera_id = selected_camera_id
+            
+            # Кнопка для подключения к выбранной камере
+            if col1.button(grv.t['connect']):
+                if grv.connect():
+                    st.success(grv.t['connected'])
+                else:
+                    st.error(grv.t['no_camera'])
+                    
+        else:
+            st.error("Устройства не найдены. Пожалуйста, подключите ГРВ-камеру и перезагрузите страницу." if lang == 'ru' else 
+                    "No devices found. Please connect the GRV camera and reload the page.")
+            
+            # Кнопка для повторного поиска устройств
+            if st.button("Повторить поиск" if lang == 'ru' else "Retry search"):
+                st.session_state.camera_search_done = False
+                st.rerun()
     else:
         if col1.button(grv.t['disconnect']):
             grv.disconnect()
+            # Сброс состояния поиска камеры при отключении
+            st.session_state.camera_search_done = False
             st.info(grv.t['disconnected'])
     
     # Кнопка калибровки
