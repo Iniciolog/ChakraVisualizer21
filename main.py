@@ -620,17 +620,46 @@ if st.session_state.report_processed and st.session_state.report_analysis:
     
     with organ_col1:
         # Инициализируем визуализатор органов
+        has_error = False  # Флаг ошибки для контроля отображения
+        organ_fig = None   # Инициализируем переменную для фигуры органов
+        
         if 'diagnostic_data' in st.session_state.report_analysis:
-            organ_visualizer = OrgansVisualizer(st.session_state.language)
-            diagnostic_data = st.session_state.report_analysis['diagnostic_data']
+            # Проверяем данные для безопасности
+            if not isinstance(st.session_state.report_analysis['diagnostic_data'], dict):
+                st.warning("Данные диагностики имеют неверный формат" if st.session_state.language == 'ru' else 
+                           "Diagnostic data has incorrect format")
+                has_error = True
             
-            # Создаем визуализацию органов
-            organ_fig = organ_visualizer.create_organs_visualization(diagnostic_data)
-            
-            # Сохраняем ссылку на объект визуализатора в session_state, если он еще не существует
-            if 'organ_visualizer' not in st.session_state:
-                st.session_state.organ_visualizer = organ_visualizer
-            
+            if not has_error:
+                try:
+                    # Создаем визуализатор с обработкой ошибок
+                    organ_visualizer = OrgansVisualizer(st.session_state.language)
+                    diagnostic_data = st.session_state.report_analysis['diagnostic_data']
+                    
+                    # Добавляем отладочный вывод
+                    print(f"DEBUG: Данные диагностики для визуализации органов: {diagnostic_data}")
+                    
+                    # Создаем визуализацию органов с обработкой ошибок
+                    organ_fig = organ_visualizer.create_organs_visualization(diagnostic_data)
+                    
+                    # Сохраняем ссылку на объект визуализатора в session_state, если он еще не существует
+                    if 'organ_visualizer' not in st.session_state:
+                        st.session_state.organ_visualizer = organ_visualizer
+                    
+                except Exception as e:
+                    st.error(f"Ошибка при создании визуализации органов: {e}" if st.session_state.language == 'ru' else 
+                             f"Error creating organ visualization: {e}")
+                    print(f"ERROR: Ошибка при создании визуализации органов: {e}")
+                    st.warning("Данные о состоянии органов недоступны" if st.session_state.language == 'ru' else 
+                             "Organ status data is not available")
+                    has_error = True
+        else:
+            st.warning("Нет данных диагностики для отображения органов" if st.session_state.language == 'ru' else 
+                       "No diagnostic data available for organ visualization")
+            has_error = True
+        
+        # Если у нас есть визуализация органов и нет ошибок
+        if organ_fig is not None and not has_error:
             # Сохраняем орган, который будет выделен на визуализации (для подсветки при наведении)
             if 'highlighted_organ' not in st.session_state:
                 st.session_state.highlighted_organ = None
@@ -646,26 +675,27 @@ if st.session_state.report_processed and st.session_state.report_analysis:
                 st.session_state.selected_organ = None
                 
             # Создаем список органов для выбора
-            organ_names = list(organ_visualizer.organs_positions.keys())
-            organ_names_localized = organ_names  # В будущем можно добавить локализацию названий органов
-            
-            # Выпадающий список для выбора органа
-            # Находим индекс текущего выбранного органа, если он есть
-            default_index = 0
-            if st.session_state.selected_organ in organ_names_localized:
-                default_index = organ_names_localized.index(st.session_state.selected_organ)
-            
-            # Функция обработки изменения выбора органа
-            def on_organ_change():
-                st.session_state.selected_organ = st.session_state.organ_selector
-            
-            selected_organ = st.selectbox(
-                label=get_text("select_organ"),
-                options=organ_names_localized,
-                index=default_index,
-                key="organ_selector",
-                on_change=on_organ_change
-            )
+            if 'organ_visualizer' in st.session_state:
+                organ_names = list(st.session_state.organ_visualizer.organs_positions.keys())
+                organ_names_localized = organ_names  # В будущем можно добавить локализацию названий органов
+                
+                # Выпадающий список для выбора органа
+                # Находим индекс текущего выбранного органа, если он есть
+                default_index = 0
+                if st.session_state.selected_organ in organ_names_localized:
+                    default_index = organ_names_localized.index(st.session_state.selected_organ)
+                
+                # Функция обработки изменения выбора органа
+                def on_organ_change():
+                    st.session_state.selected_organ = st.session_state.organ_selector
+                
+                selected_organ = st.selectbox(
+                    label=get_text("select_organ"),
+                    options=organ_names_localized,
+                    index=default_index,
+                    key="organ_selector",
+                    on_change=on_organ_change
+                )
     
     with organ_col2:
         if st.session_state.selected_organ and 'organ_visualizer' in st.session_state:
@@ -674,15 +704,31 @@ if st.session_state.report_processed and st.session_state.report_analysis:
                 isinstance(st.session_state.report_analysis['diagnostic_data'], dict) and 
                 st.session_state.report_analysis['diagnostic_data']):
                 try:
+                    # Добавляем отладочные сообщения
+                    print(f"DEBUG: Выбран орган для детализации: {st.session_state.selected_organ}")
+                    
                     # Инициализируем визуализатор детальных изображений органов, если он еще не существует
                     if 'organ_detail_visualizer' not in st.session_state:
-                        st.session_state.organ_detail_visualizer = OrganDetailVisualizer(st.session_state.language)
+                        try:
+                            st.session_state.organ_detail_visualizer = OrganDetailVisualizer(st.session_state.language)
+                            print("DEBUG: Визуализатор деталей органов успешно создан")
+                        except Exception as e:
+                            print(f"ERROR: Не удалось создать визуализатор деталей органов: {e}")
+                            st.error(f"Ошибка при создании визуализатора деталей органов: {e}")
+                            # Не можем использовать return здесь, добавляем флаг ошибки
+                            has_error = True
                     
                     # Получаем информацию о выбранном органе с обработкой ошибок
-                    organ_details = st.session_state.organ_visualizer.get_organ_status_description(
-                        st.session_state.selected_organ, 
-                        st.session_state.report_analysis['diagnostic_data']
-                    )
+                    try:
+                        organ_details = st.session_state.organ_visualizer.get_organ_status_description(
+                            st.session_state.selected_organ, 
+                            st.session_state.report_analysis['diagnostic_data']
+                        )
+                        print(f"DEBUG: Получены детали для органа {st.session_state.selected_organ}: {organ_details['status']}")
+                    except Exception as e:
+                        print(f"ERROR: Ошибка при получении статуса органа: {e}")
+                        # Выбрасываем исключение дальше для общей обработки
+                        raise
                 except Exception as e:
                     st.error(f"Ошибка при получении данных об органе: {e}")
                     # Устанавливаем орган в None, чтобы пользователь мог выбрать другой
