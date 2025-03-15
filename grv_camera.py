@@ -742,63 +742,91 @@ class GRVCamera:
             import json
             import numpy as np
             import streamlit as st
+            import traceback
             
+            print(f"Начинаем загрузку сессии из файла: {filename}")
+            
+            # Проверяем существование файла
+            if not os.path.exists(filename):
+                print(f"Файл {filename} не существует")
+                return False
+                
             # Загружаем данные из JSON файла
-            with open(filename, 'r', encoding='utf-8') as f:
-                session_data = json.load(f)
+            try:
+                with open(filename, 'r', encoding='utf-8') as f:
+                    session_data = json.load(f)
+                print(f"Файл успешно прочитан, ключи: {list(session_data.keys())}")
+            except Exception as e:
+                print(f"Ошибка при чтении JSON: {e}")
+                return False
+            
+            # Инициализируем структуры данных
+            # Инициализируем их в любом случае, чтобы не было ошибок доступа к ключам
+            self.processed_data = {
+                HandType.LEFT: {ft: {} for ft in FingerType},
+                HandType.RIGHT: {ft: {} for ft in FingerType}
+            }
+            
+            self.finger_images = {
+                HandType.LEFT: {ft: None for ft in FingerType},
+                HandType.RIGHT: {ft: None for ft in FingerType}
+            }
             
             # Восстанавливаем обработанные данные в правильном формате
             if "processed_data_serializable" in session_data:
-                # Сбрасываем текущие данные
-                self.processed_data = {
-                    HandType.LEFT: {ft: {} for ft in FingerType},
-                    HandType.RIGHT: {ft: {} for ft in FingerType}
-                }
+                print("Загружаем обработанные данные")
                 
                 # Загружаем данные из файла
                 for hand_key, fingers in session_data["processed_data_serializable"].items():
-                    hand = HandType[hand_key] if hand_key in [h.name for h in HandType] else None
-                    if hand:
-                        for finger_key, data in fingers.items():
-                            finger = FingerType[finger_key] if finger_key in [f.name for f in FingerType] else None
-                            if finger:
-                                # Восстанавливаем данные для пальца
-                                self.processed_data[hand][finger] = data
+                    try:
+                        hand = HandType[hand_key] if hand_key in [h.name for h in HandType] else None
+                        if hand:
+                            for finger_key, data in fingers.items():
+                                finger = FingerType[finger_key] if finger_key in [f.name for f in FingerType] else None
+                                if finger:
+                                    # Восстанавливаем данные для пальца
+                                    self.processed_data[hand][finger] = data
+                    except Exception as e:
+                        print(f"Ошибка при загрузке данных для {hand_key}: {e}")
             
             # Восстанавливаем изображения пальцев
             if "finger_images_serializable" in session_data:
-                # Сбрасываем текущие изображения
-                self.finger_images = {
-                    HandType.LEFT: {ft: None for ft in FingerType},
-                    HandType.RIGHT: {ft: None for ft in FingerType}
-                }
+                print("Загружаем изображения пальцев")
                 
                 # Загружаем изображения из файла
                 for hand_key, fingers in session_data["finger_images_serializable"].items():
-                    hand = HandType[hand_key] if hand_key in [h.name for h in HandType] else None
-                    if hand:
-                        for finger_key, img_b64 in fingers.items():
-                            finger = FingerType[finger_key] if finger_key in [f.name for f in FingerType] else None
-                            if finger and img_b64:
-                                # Восстанавливаем изображение из base64
-                                img_data = base64.b64decode(img_b64)
-                                nparr = np.frombuffer(img_data, np.uint8)
-                                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                                self.finger_images[hand][finger] = img
-                                
-                                # Также сохраняем изображение на диск для совместимости
-                                os.makedirs(self.temp_folder, exist_ok=True)
-                                filename = f"{self.temp_folder}/grv_{hand.name.lower()}_{finger.name.lower()}.jpg"
-                                cv2.imwrite(filename, img)
+                    try:
+                        hand = HandType[hand_key] if hand_key in [h.name for h in HandType] else None
+                        if hand:
+                            for finger_key, img_b64 in fingers.items():
+                                finger = FingerType[finger_key] if finger_key in [f.name for f in FingerType] else None
+                                if finger and img_b64:
+                                    # Восстанавливаем изображение из base64
+                                    img_data = base64.b64decode(img_b64)
+                                    nparr = np.frombuffer(img_data, np.uint8)
+                                    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                                    
+                                    if img is not None:
+                                        self.finger_images[hand][finger] = img
+                                        
+                                        # Также сохраняем изображение на диск для совместимости
+                                        os.makedirs(self.temp_folder, exist_ok=True)
+                                        img_filename = f"{self.temp_folder}/grv_{hand.name.lower()}_{finger.name.lower()}.jpg"
+                                        cv2.imwrite(img_filename, img)
+                                        print(f"Сохранено изображение для {hand.name}_{finger.name} в {img_filename}")
+                    except Exception as e:
+                        print(f"Ошибка при загрузке изображений для {hand_key}: {e}")
+                        print(traceback.format_exc())
             
             # Сохраняем загруженные данные в session_state для дальнейшего использования
             if "chakra_values" in session_data:
+                print("Загружаем значения чакр")
                 st.session_state.chakra_values_from_grv = session_data["chakra_values"]
             
             # Устанавливаем флаг загрузки сессии
             st.session_state.session_loaded = True
             
-            print(f"Данные сессии загружены из файла: {filename}")
+            print(f"Данные сессии успешно загружены из файла: {filename}")
             return True
             
         except Exception as e:
@@ -1235,8 +1263,12 @@ def display_grv_interface(lang: str = 'ru'):
             temp_file.write(uploaded_session.getvalue())
             temp_file.close()
             
-            # Загружаем сессию из временного файла
-            if grv.load_session(temp_file.name):
+            # Важно: передаем полный путь к временному файлу
+            session_file_path = temp_file.name
+            print(f"Попытка загрузки сессии из: {session_file_path}")
+            
+            # Загружаем сессию из временного файла, проверяя что файл существует
+            if os.path.exists(session_file_path) and grv.load_session(session_file_path):
                 st.success(
                     f"Сессия успешно загружена из файла {uploaded_session.name}" if lang == 'ru' else 
                     f"Session successfully loaded from file {uploaded_session.name}"
@@ -1289,8 +1321,7 @@ def display_grv_interface(lang: str = 'ru'):
                 # Устанавливаем флаг, что сессия загружена
                 import streamlit as st
                 st.session_state.session_loaded = True
-                # Перезагружаем страницу чтобы обновить интерфейс
-                st.rerun()
+                # НЕ делаем перезагрузку здесь, так как она уже отображается в интерфейсе
             else:
                 st.error(
                     "Ошибка при загрузке сессии" if lang == 'ru' else 
