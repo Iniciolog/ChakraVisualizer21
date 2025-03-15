@@ -181,10 +181,13 @@ def draw_biofield(ax, energy_values):
         # Определяем, является ли это слоем свечения
         is_glow_layer = i >= layers
         
+        # Инициализируем индекс свечения, если это слой свечения
+        glow_index = i - layers if is_glow_layer else 0
+        
         # Calculate the scale for this layer
         if is_glow_layer:
             # Свечение имеет больший размер
-            glow_index = i - layers
+            # glow_index уже инициализирован выше
             scale = 0.3 - (glow_index * 0.1)  # Постепенно затухает
         else:
             scale = 1 - (i / layers)
