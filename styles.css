@@ -41,22 +41,44 @@ label, button, input, select, textarea {
 /* Header styling */
 h1, h2, h3, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
     color: var(--text-color) !important;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+    letter-spacing: 0.5px;
 }
 
 h1 {
     text-align: center;
+    margin-bottom: 1.5rem;
+    font-weight: 400;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+h2 {
+    font-weight: 500;
+    margin-top: 1.5rem;
     margin-bottom: 1rem;
-    font-weight: 300;
-    letter-spacing: 1px;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.8px;
+}
+
+h3 {
+    font-weight: 500;
+    font-size: 1.2rem;
+    margin-top: 1rem;
+    margin-bottom: 0.8rem;
 }
 
 /* Text styling */
 p, li, div, span, a {
     color: var(--text-color) !important;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Roboto', 'Open Sans', Arial, sans-serif;
+    line-height: 1.6;
+    font-weight: 300;
+    letter-spacing: 0.3px;
 }
+
+/* Add Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Roboto:wght@300;400;500&display=swap');
 
 /* Radio button styling */
 div[role="radiogroup"] label span,

@@ -370,12 +370,23 @@ with upload_col2:
                 # Get color for this chakra
                 chakra_color = next((c['color_hex'] for c in chakra_data if c['name'] == chakra_name), "#CCCCCC")
                 
-                # Create a colored dot with the chakra name and energy level
+                # Создаем улучшенный цветной кружок с градиентом и тенью, с традиционным цветом
                 st.markdown(
-                    f"<div style='display: flex; align-items: center;'>"
-                    f"<div style='background-color: {chakra_color}; width: 15px; height: 15px; border-radius: 50%; margin-right: 10px;'></div>"
-                    f"<span><b>{chakra_name_display}</b>: {energy_value:.1f}%</span>"
-                    f"</div>",
+                    f"""<div style='display: flex; align-items: center; margin-bottom: 8px;'>
+                        <div style='
+                            background-color: {chakra_color}; 
+                            background: radial-gradient(circle at 30% 30%, {chakra_color}BB, {chakra_color}); 
+                            width: 22px; 
+                            height: 22px; 
+                            border-radius: 50%; 
+                            margin-right: 12px;
+                            box-shadow: 0 0 8px 2px {chakra_color}88;
+                            border: 1px solid rgba(255, 255, 255, 0.2);
+                        '></div>
+                        <span style='font-family: "Montserrat", sans-serif; letter-spacing: 0.3px;'>
+                            <b>{chakra_name_display}</b>: {energy_value:.1f}%
+                        </span>
+                    </div>""",
                     unsafe_allow_html=True
                 )
         
@@ -492,12 +503,23 @@ with col1:
         sanskrit_name_display = chakra['sanskrit_name_ru'] if st.session_state.language == 'ru' else chakra['sanskrit_name']
         color_hex = chakra['color_hex']
         
-        # Display a color sample with the chakra name and energy value
+        # Display a color sample with the chakra name and energy value - улучшенный стиль
         st.markdown(
-            f"<div style='display: flex; align-items: center; margin-bottom: 10px;'>"
-            f"<div style='background-color: {color_hex}; width: 20px; height: 20px; border-radius: 50%; margin-right: 10px;'></div>"
-            f"<span><b>{chakra_name_display}</b> ({sanskrit_name_display}): <b>{st.session_state.energy_values[chakra_name]}%</b></span>"
-            f"</div>",
+            f"""<div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                <div style='
+                    background-color: {color_hex}; 
+                    background: radial-gradient(circle at 30% 30%, {color_hex}BB, {color_hex}); 
+                    width: 22px; 
+                    height: 22px; 
+                    border-radius: 50%; 
+                    margin-right: 12px;
+                    box-shadow: 0 0 8px 2px {color_hex}88;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                '></div>
+                <span style='font-family: "Montserrat", sans-serif; letter-spacing: 0.3px;'>
+                    <b>{chakra_name_display}</b> ({sanskrit_name_display}): <b>{st.session_state.energy_values[chakra_name]}%</b>
+                </span>
+            </div>""",
             unsafe_allow_html=True
         )
 
@@ -720,18 +742,31 @@ for i, tab in enumerate(chakra_tabs):
             energy_value = st.session_state.energy_values[chakra["name"]]
             chakra_color = utils.calculate_chakra_color(chakra["color_rgb"], energy_value/100)
             
-            # Display chakra color and energy level
+            # Display chakra color and energy level - с улучшенным градиентным кружком
+            color_hex = chakra['color_hex']
             st.markdown(f"""
             ### {chakra_name_display} ({sanskrit_name_display})
             **{get_text("location")}**: {location_display}
             
             **{get_text("current_energy")}**: {energy_value}%
             
-            <div style='background: rgb({chakra_color[0]}, {chakra_color[1]}, {chakra_color[2]}); 
-                        width: 100px; 
-                        height: 100px; 
-                        border-radius: 50%; 
-                        margin: 20px auto;'></div>
+            <div style='
+                background-color: {color_hex}; 
+                background: radial-gradient(circle at 30% 30%, {color_hex}BB, {color_hex}); 
+                width: 120px; 
+                height: 120px; 
+                border-radius: 50%; 
+                margin: 20px auto;
+                box-shadow: 0 0 15px 5px {color_hex}88;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: "Montserrat", sans-serif;
+                font-weight: bold;
+                color: rgba(255, 255, 255, 0.85);
+                text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            '>{energy_value}%</div>
             """, unsafe_allow_html=True)
         
         with col2:
