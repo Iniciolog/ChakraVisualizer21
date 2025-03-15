@@ -43,6 +43,7 @@ class GRVCamera:
         self.connected = False
         self.camera_id = None
         self.camera = None
+        self.emulation_mode = False  # Флаг режима эмуляции
         
         # Словарь для хранения локализованных строк
         self._init_localization()
@@ -227,10 +228,20 @@ class GRVCamera:
                 print("Доступно несколько камер, выберите одну через интерфейс")
                 return False
         
+        # Проверяем, используем ли мы эмуляционный режим (ID = -1)
+        if self.camera_id == -1:
+            # Установка эмуляционного режима
+            self.connected = True
+            self.emulation_mode = True
+            print("Подключено к эмуляционной ГРВ-камере")
+            return True
+            
+        # Реальный режим для подключенной камеры
         try:
             self.camera = cv2.VideoCapture(self.camera_id)
             if self.camera.isOpened():
                 self.connected = True
+                self.emulation_mode = False
                 print(f"Подключено к камере с ID {self.camera_id}")
                 return True
             else:
@@ -259,11 +270,77 @@ class GRVCamera:
         Returns:
             Optional[np.ndarray]: Захваченное изображение или None в случае ошибки
         """
-        if not self.connected or self.camera is None:
+        if not self.connected:
             print("Камера не подключена")
             return None
         
+        # Эмуляционный режим - создаем изображение с эмулированными данными
+        if hasattr(self, 'emulation_mode') and self.emulation_mode:
+            try:
+                # Для эмуляции создаем изображение с эффектом ГРВ-свечения
+                # Создаем пустое черное изображение
+                width, height = 400, 400
+                image = np.zeros((height, width, 3), dtype=np.uint8)
+                
+                # Центр изображения
+                center_x, center_y = width // 2, height // 2
+                
+                # Генерируем случайные параметры для эмуляции различных состояний пальца
+                # Используем индексы пальца и руки для генерации разных, но воспроизводимых результатов
+                seed = hash(f"{hand.name}_{finger.name}") % 1000
+                np.random.seed(seed)
+                
+                # Рисуем эмулированный контур пальца (светящаяся часть)
+                radius = np.random.randint(50, 120)
+                color = (0, 0, 255)  # красный цвет для основного свечения
+                thickness = -1  # заполненный круг
+                cv2.circle(image, (center_x, center_y), radius, color, thickness)
+                
+                # Добавляем вариации интенсивности для создания эффекта неравномерного свечения
+                for _ in range(40):
+                    x = np.random.randint(center_x - radius, center_x + radius)
+                    y = np.random.randint(center_y - radius, center_y + radius)
+                    if (x - center_x)**2 + (y - center_y)**2 <= radius**2:
+                        small_radius = np.random.randint(5, 15)
+                        intensity = np.random.randint(100, 255)
+                        color = (0, 0, intensity)
+                        cv2.circle(image, (x, y), small_radius, color, -1)
+                
+                # Добавляем выбросы для создания эффекта турбулентности в биополе
+                for _ in range(20):
+                    angle = np.random.uniform(0, 2 * np.pi)
+                    distance = radius + np.random.randint(10, 40)
+                    x = int(center_x + distance * np.cos(angle))
+                    y = int(center_y + distance * np.sin(angle))
+                    if 0 <= x < width and 0 <= y < height:
+                        small_radius = np.random.randint(3, 8)
+                        intensity = np.random.randint(50, 200)
+                        color = (0, 0, intensity)
+                        cv2.circle(image, (x, y), small_radius, color, -1)
+                
+                # Добавляем размытие для создания эффекта свечения
+                image = cv2.GaussianBlur(image, (15, 15), 0)
+                
+                # Сохраняем изображение в памяти
+                self.finger_images[hand][finger] = image
+                
+                # Сохраняем изображение на диск
+                filename = f"{self.temp_folder}/grv_{hand.name.lower()}_{finger.name.lower()}.jpg"
+                cv2.imwrite(filename, image)
+                print(f"Сохранено эмулированное изображение: {filename}")
+                
+                return image
+            
+            except Exception as e:
+                print(f"Ошибка при создании эмулированного изображения: {e}")
+                return None
+        
+        # Реальный режим с подключенной камерой
         try:
+            if self.camera is None:
+                print("Камера недоступна")
+                return None
+                
             # В реальной реализации здесь будет настройка параметров камеры
             # для захвата ГРВ-свечения для конкретного пальца
             
