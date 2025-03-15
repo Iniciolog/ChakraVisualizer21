@@ -1,5 +1,3 @@
 [pages]
-# Переименование страниц
 "main.py" = "Bioresonans Lab"
 "pages/grv_page.py" = "GRV Lab"
-"Chakra energy values" = false

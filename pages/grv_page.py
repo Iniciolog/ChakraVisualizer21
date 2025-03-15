@@ -1,67 +1,85 @@
 import streamlit as st
 import numpy as np
-from grv_camera import GRVCamera, HandType, FingerType, display_grv_interface
-from chakra_visualization import create_chakra_visualization 
-from chakra_visualization_3d import create_chakra_visualization_3d
-from assets.chakra_info import chakra_data, app_text
+import matplotlib.pyplot as plt
 import json
+import os
+import sys
 
-# Initialize session state for language
+# Добавляем корневую директорию в путь для импорта
+sys.path.append('.')
+
+# Импортируем необходимые модули из основного приложения
+from grv_camera import display_grv_interface, GRVCamera
+from chakra_visualization import create_chakra_visualization
+from chakra_visualization_3d import create_chakra_visualization_3d
+from aura_photo import capture_aura_photo
+from assets.chakra_info import chakra_data, app_text
+
+# Настройка страницы
+st.set_page_config(
+    page_title="GRV AURA STUDIO",
+    page_icon="🔮",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'About': """
+        ### GRV AURA STUDIO
+        **Разработано в НИЦ Инициологии и трансперсональной психологии**
+        
+        Streamlit v1.43.1
+        """
+    }
+)
+
+# Инициализация состояния сессии
 if 'language' not in st.session_state:
     st.session_state.language = 'ru'  # Default to Russian
     
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = '2d'  # Default to 2D view
 
-# Get text based on selected language
+# Функция для получения текста на выбранном языке
 def get_text(key):
     return app_text[st.session_state.language][key]
-
-# Set page configuration
-st.set_page_config(
-    page_title=get_text("page_title"),
-    page_icon="🧘",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Add custom CSS for dark theme
-st.markdown("""
+    
+# Пользовательский CSS
+with open('styles.css') as f:
+    css_content = f.read()
+    
+# Добавляем инлайн CSS для элементов с темным оформлением
+additional_css = """
 <style>
-/* Global dark theme overrides */
-body {
-    background-color: #0E0E20 !important;
-    color: #E0E0E0 !important;
-}
-.stApp {
-    background-color: #0E0E20 !important;
-    color: #E0E0E0 !important;
-}
-/* Make dropdowns and selects dark */
+/* Force dark theme for dropdowns and other elements */
 div[data-baseweb="select"], 
 div[data-baseweb="popover"],
+div[data-baseweb="menu"],
 div[role="listbox"],
 ul[role="listbox"],
 li[role="option"] {
     background-color: #14142B !important;
     color: #E0E0E0 !important;
 }
-/* Header area styling */
+
+/* Override any inline styles that might use white backgrounds */
+[style*="background-color: rgb(255, 255, 255)"],
+[style*="background-color:#fff"],
+[style*="background-color: #ffffff"],
+[style*="background: white"],
+[style*="background:white"] {
+    background-color: #0E0E20 !important;
+}
+
+/* Header area fix */
 header[data-testid="stHeader"] {
     background-color: #0E0E20 !important;
 }
-/* Improved divider styling */
-hr {
-    border-color: rgba(122, 110, 191, 0.2) !important;
-    margin: 1.5rem 0 !important;
-}
 </style>
-""", unsafe_allow_html=True)
+"""
 
-st.title(get_text("grv_title"))
-st.markdown(get_text("grv_intro"))
+# Применяем CSS
+st.markdown(f'<style>{css_content}</style>{additional_css}', unsafe_allow_html=True)
 
-# Sidebar customization
+# Боковая панель
 with st.sidebar:
     st.title("🌍 Language / Язык")
     lang_option = st.radio(
@@ -71,7 +89,7 @@ with st.sidebar:
         horizontal=True
     )
     
-    # Update language based on selection
+    # Обновляем язык на основе выбора
     if lang_option == "English" and st.session_state.language != 'en':
         st.session_state.language = 'en'
         st.rerun()
@@ -79,7 +97,7 @@ with st.sidebar:
         st.session_state.language = 'ru'
         st.rerun()
         
-    # Add visualization mode selector
+    # Добавляем селектор режима визуализации
     st.title("🔄 " + get_text("view_mode"))
     view_mode = st.radio(
         label=get_text("view_mode"),
@@ -89,143 +107,180 @@ with st.sidebar:
         label_visibility="collapsed"
     )
     
-    # Update view mode
+    # Обновляем режим просмотра
     new_mode = '2d' if view_mode == get_text("view_2d") else '3d'
     if st.session_state.view_mode != new_mode:
         st.session_state.view_mode = new_mode
         st.rerun()
     
-    # Help text for 3D mode
+    # Подсказка для 3D режима
     if st.session_state.view_mode == '3d':
         st.info(get_text("view_3d_help"))
-    
-    # Add session management
-    st.title("💾 " + get_text("session_management"))
-    
-    # Load session button
-    uploaded_session = st.file_uploader(
-        get_text("load_session"),
-        type="json",
-        help=get_text("load_session_help")
-    )
-    
-    if uploaded_session is not None:
-        try:
-            # Load the session data
-            session_data = json.load(uploaded_session)
-            
-            # Update session state with loaded data
-            if 'energy_values' in session_data:
-                st.session_state.energy_values = session_data['energy_values']
-                st.success(get_text("session_loaded"))
-                
-                # Force refresh
-                st.rerun()
-                
-        except Exception as e:
-            st.error(f"{get_text('session_load_error')}: {str(e)}")
-    
-    # Save session button
-    if st.button(get_text("save_session"), type="primary"):
-        # Prepare session data to save
-        session_data = {
-            'energy_values': st.session_state.energy_values,
-            'language': st.session_state.language,
-            'view_mode': st.session_state.view_mode
-        }
-        
-        # Convert to JSON
-        session_json = json.dumps(session_data, indent=4)
-        
-        # Create download button
-        st.download_button(
-            label=get_text("download_session"),
-            data=session_json,
-            file_name="grv_session.json",
-            mime="application/json"
-        )
-        st.success(get_text("session_prepared"))
 
-# GRV Camera Interface
+# Заголовок страницы
+st.title("GRV AURA STUDIO")
+st.markdown("Приложение для газоразрядной визуализации (ГРВ) и анализа энергетического поля человека")
+
+# Клиентская информация
+st.header(get_text("client_info_header"))
+
+# Инициализация session state для информации о клиенте
+if 'client_info' not in st.session_state:
+    st.session_state.client_info = {
+        'fullname': '',
+        'birthdate': None,
+        'phone': '',
+        'email': ''
+    }
+
+# Создаем две колонки для информации о клиенте
+col1, col2 = st.columns(2)
+
+with col1:
+    # ФИО
+    fullname = st.text_input(
+        get_text("fullname"),
+        value=st.session_state.client_info['fullname']
+    )
+    st.session_state.client_info['fullname'] = fullname
+    
+    # Телефон
+    phone = st.text_input(
+        get_text("phone"),
+        value=st.session_state.client_info['phone']
+    )
+    st.session_state.client_info['phone'] = phone
+
+with col2:
+    # Дата рождения
+    birthdate = st.date_input(
+        get_text("birthdate"),
+        value=st.session_state.client_info['birthdate'] if st.session_state.client_info['birthdate'] else None
+    )
+    st.session_state.client_info['birthdate'] = birthdate
+    
+    # Email
+    email = st.text_input(
+        get_text("email"),
+        value=st.session_state.client_info['email']
+    )
+    st.session_state.client_info['email'] = email
+
+# Кнопка сохранения
+save_col1, save_col2 = st.columns([1, 3])
+with save_col1:
+    if st.button(get_text("save_client"), type="primary"):
+        st.success(f"{get_text('fullname')}: {st.session_state.client_info['fullname']}\n"
+                 f"{get_text('birthdate')}: {st.session_state.client_info['birthdate']}\n"
+                 f"{get_text('phone')}: {st.session_state.client_info['phone']}\n"
+                 f"{get_text('email')}: {st.session_state.client_info['email']}")
+
+# Разделитель
+st.markdown("---")
+
+# ГРВ-сканирование - основной функционал этой страницы
+st.header(get_text("grv_tab_header"))
+st.markdown(get_text("grv_tab_info"))
+
+# Вызываем функцию для отображения ГРВ-интерфейса
 display_grv_interface(st.session_state.language)
 
-# Visualization section
-st.header(get_text("visualization_header"))
-
-# Create tabs for different visualizations
-viz_tab1, viz_tab2 = st.tabs([get_text("chakra_visualization"), get_text("aura_visualization")])
-
-with viz_tab1:
-    # Initialize values for chakras if they don't exist
-    if 'energy_values' not in st.session_state:
-        # Set default values at 100%
-        st.session_state.energy_values = {chakra['name']: 100 for chakra in chakra_data}
+# Если есть данные ГРВ-сканирования, отображаем визуализацию
+if 'chakra_values_from_grv' in st.session_state:
+    st.markdown("---")
+    st.header(get_text("visual_header"))
     
-    # Create the visualization based on the selected mode
-    if st.session_state.view_mode == '2d':
-        fig = create_chakra_visualization(st.session_state.energy_values, st.session_state.language)
-        st.pyplot(fig)
+    # Создаем две колонки - левая для параметров, правая для визуализации
+    grv_col1, grv_col2 = st.columns([1, 2])
+    
+    with grv_col1:
+        # Отображаем информацию о сессии ГРВ-сканирования
+        st.success(f"{get_text('grv_analysis_results')}", icon="✅")
+        
+        # Баланс чакр (если доступен)
+        if 'balance_index' in st.session_state:
+            balance = st.session_state.balance_index
+            st.metric("Индекс энергетического баланса", f"{balance:.1f}%")
+            
+            # Оценка баланса
+            if balance > 80:
+                st.success("Высокий уровень гармонизации энергетических центров")
+            elif balance > 60:
+                st.info("Средний уровень гармонизации энергетических центров")
+            elif balance > 40:
+                st.warning("Ниже среднего уровень гармонизации энергетических центров")
+            else:
+                st.error("Низкий уровень гармонизации энергетических центров")
+        
+        # Показываем текущие значения энергии чакр в виде таблицы
+        st.markdown("### " + get_text("chakra_energy_values"))
+        
+        # Получаем значения чакр из ГРВ-сессии
+        chakra_values = st.session_state.chakra_values_from_grv
+        
+        for chakra in chakra_data:
+            chakra_name = chakra['name']
+            chakra_name_display = chakra['name_ru'] if st.session_state.language == 'ru' else chakra['name']
+            sanskrit_name_display = chakra['sanskrit_name_ru'] if st.session_state.language == 'ru' else chakra['sanskrit_name']
+            color_hex = chakra['color_hex']
+            
+            # Получаем значение энергии для этой чакры
+            energy_value = chakra_values.get(chakra_name, 0)
+            
+            # Отображаем образец цвета с названием чакры и значением энергии
+            st.markdown(
+                f"<div style='display: flex; align-items: center; margin-bottom: 10px;'>"
+                f"<div style='background-color: {color_hex}; width: 20px; height: 20px; border-radius: 50%; margin-right: 10px;'></div>"
+                f"<span><b>{chakra_name_display}</b> ({sanskrit_name_display}): <b>{energy_value:.1f}%</b></span>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
+    
+    with grv_col2:
+        # Создаем визуализацию чакр на основе текущих энергетических значений и режима просмотра
+        if st.session_state.view_mode == '2d':
+            fig = create_chakra_visualization(chakra_values, st.session_state.language)
+            st.pyplot(fig)
+        else:  # 3D mode
+            fig_3d = create_chakra_visualization_3d(chakra_values, st.session_state.language)
+            st.plotly_chart(fig_3d, use_container_width=True, height=700)
+            
+        # Добавляем кнопку для создания фото с аурой
+        if st.button("📸 " + (
+                "Сделать фото ауры" if st.session_state.language == 'ru' else "Take Aura Photo"
+            )):
+            # Переключаем на режим фотографии
+            st.session_state.aura_photo_mode = True
+            st.rerun()
+
+# Если включен режим фотографии с аурой, показываем интерфейс для фото
+if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
+    st.markdown("---")  # Разделитель
+    
+    # Используем данные из ГРВ камеры для фото ауры
+    if 'chakra_values_from_grv' in st.session_state:
+        st.success("Используются данные ГРВ-сканирования для создания ауры" if st.session_state.language == 'ru' else 
+                  "Using GRV scanning data to create aura")
+        
+        # Копируем значения из ГРВ для фото ауры
+        grv_energy_values = {k: float(v) for k, v in st.session_state.chakra_values_from_grv.items()}
+        # Используем локальную переменную для ГРВ, чтобы избежать влияния на основное приложение
+        st.session_state.grv_aura_values = grv_energy_values
+        
+        # Показываем значения для отладки в сайдбаре
+        st.sidebar.markdown("### GRV Chakra Energy Values")
+        for chakra_name, energy_value in grv_energy_values.items():
+            st.sidebar.text(f"{chakra_name}: {energy_value}")
+        
+        # Используем значения чакр из ГРВ для создания фото
+        capture_aura_photo(st.session_state.grv_aura_values, st.session_state.language)
     else:
-        fig = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
-        st.plotly_chart(fig, use_container_width=True)
+        # Если нет данных ГРВ, показываем сообщение
+        st.warning("Необходимо провести ГРВ-сканирование для создания фото ауры", icon="⚠️")
     
-    # Show chakra energy values in a table
-    st.subheader(get_text("energy_levels"))
-    
-    # Create three columns for chakra information display
-    col1, col2, col3 = st.columns(3)
-    
-    # Distribute chakras across columns
-    chakras_per_column = len(chakra_data) // 3
-    chakra_columns = [
-        chakra_data[:chakras_per_column],
-        chakra_data[chakras_per_column:2*chakras_per_column],
-        chakra_data[2*chakras_per_column:]
-    ]
-    
-    for i, (col, chakras) in enumerate(zip([col1, col2, col3], chakra_columns)):
-        with col:
-            for chakra in chakras:
-                chakra_name = chakra['name_ru'] if st.session_state.language == 'ru' else chakra['name']
-                chakra_color = chakra['color_hex']
-                energy_value = st.session_state.energy_values.get(chakra['name'], 100)
-                
-                # Создаем HTML для отображения цветного кружка и имени чакры
-                st.markdown(
-                    f"""<div style='display: flex; align-items: center; margin-bottom: 5px;'>
-                        <div style='
-                            background-color: {chakra_color}; 
-                            background: radial-gradient(circle at 30% 30%, {chakra_color}BB, {chakra_color}); 
-                            width: 20px; 
-                            height: 20px; 
-                            border-radius: 50%; 
-                            margin-right: 10px;
-                            box-shadow: 0 0 8px 2px {chakra_color}88;
-                        '></div>
-                        <span style='font-weight: 500;'>{chakra_name}: {energy_value:.1f}%</span>
-                    </div>""",
-                    unsafe_allow_html=True
-                )
-
-with viz_tab2:
-    st.write(get_text("aura_coming_soon"))
-    
-    # Placeholder for aura visualization features
-    st.info(get_text("feature_in_development"))
-
-# Analytics section
-st.header(get_text("analytics_header"))
-st.markdown(get_text("analytics_intro"))
-
-# Placeholder for analytics features
-st.info(get_text("feature_in_development"))
-
-# Footer with information about the application
-st.markdown("---")
-st.markdown(
-    f"""<div style='text-align: center; color: #888; padding: 10px;'>
-    <p>{get_text("footer_text")}</p>
-    <p style='font-size: 0.8em;'>© 2023 GRV Research Labs</p>
-    </div>""",
-    unsafe_allow_html=True
-)
+    # Кнопка для возврата к основному режиму
+    if st.button("↩️ " + (
+            "Вернуться к основному режиму" if st.session_state.language == 'ru' else "Return to main mode"
+        )):
+        st.session_state.aura_photo_mode = False
+        st.rerun()
