@@ -559,22 +559,48 @@ with col2:
 if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
     st.markdown("---")  # Разделитель
     
+    # Проверяем, есть ли восстановленные данные
+    if 'chakra_values_from_grv_backup' in st.session_state:
+        # Восстанавливаем резервную копию
+        st.session_state.chakra_values_from_grv = st.session_state.chakra_values_from_grv_backup.copy()
+        
+    # Проверяем, есть ли восстановленные данные энергии
+    if 'saved_energy_values_backup' in st.session_state:
+        # Восстанавливаем резервную копию
+        st.session_state.energy_values = st.session_state.saved_energy_values_backup.copy()
+    
     # Приоритет 1: Используем данные из ГРВ камеры, если они доступны
     if 'chakra_values_from_grv' in st.session_state:
         st.success("Используются данные ГРВ-сканирования для создания ауры" if st.session_state.language == 'ru' else 
                   "Using GRV scanning data to create aura")
         
-        # Копируем значения из ГРВ для фото ауры
-        grv_energy_values = {k: float(v) for k, v in st.session_state.chakra_values_from_grv.items()}
-        st.session_state.energy_values_aura = grv_energy_values
-        
-        # Показываем значения для отладки
-        st.sidebar.markdown("### GRV Chakra Energy Values")
-        for chakra_name, energy_value in grv_energy_values.items():
-            st.sidebar.text(f"{chakra_name}: {energy_value}")
-        
-        # Используем значения чакр из ГРВ для создания фото
-        capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
+        try:
+            # Копируем значения из ГРВ для фото ауры с проверкой типов
+            grv_energy_values = {}
+            for k, v in st.session_state.chakra_values_from_grv.items():
+                try:
+                    grv_energy_values[k] = float(v)
+                except (ValueError, TypeError):
+                    # Если преобразование не получается, используем значение по умолчанию
+                    print(f"Ошибка при преобразовании значения {k}: {v} в число")
+                    grv_energy_values[k] = 50.0  # Значение по умолчанию
+                    
+            st.session_state.energy_values_aura = grv_energy_values
+            
+            # Показываем значения для отладки
+            st.sidebar.markdown("### GRV Chakra Energy Values")
+            for chakra_name, energy_value in grv_energy_values.items():
+                st.sidebar.text(f"{chakra_name}: {energy_value}")
+            
+            # Сохраняем в сессии энергетические значения
+            st.session_state.saved_energy_values = grv_energy_values.copy()
+            
+            # Используем значения чакр из ГРВ для создания фото
+            capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
+        except Exception as e:
+            import traceback
+            st.error(f"Ошибка при создании фото ауры: {e}")
+            st.code(traceback.format_exc())
         
     # Приоритет 2: Используем данные из отчета диагностики, если нет ГРВ данных
     elif 'report_processed' in st.session_state and st.session_state.report_processed:
