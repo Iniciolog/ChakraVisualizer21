@@ -38,11 +38,28 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
         "Crown": [128, 0, 128]        # фиолетовый
     }
     
-    # Коэффициент увеличения яркости (25%)
-    brightness_boost = 1.25
+    # Коэффициент увеличения яркости (35%)
+    brightness_boost = 1.35
     
     # Преобразуем все значения энергии в float для безопасного вычисления
-    energy_values_float = {k: float(v) for k, v in energy_values.items()}
+    # и применяем коррекцию для лучшей видимости при низких значениях
+    energy_values_float = {}
+    for k, v in energy_values.items():
+        # Нелинейная коррекция: увеличиваем значения в нижнем диапазоне
+        # Это делает более заметной даже слабую энергию, но сохраняет различия
+        # между разными уровнями
+        float_val = float(v)
+        if float_val < 30:  # Для значений ниже 30%
+            # Увеличиваем до диапазона 30-50% (мин. 30%)
+            corrected_val = 30 + (float_val / 30) * 20
+        elif float_val < 60:  # Для значений от 30% до 60%
+            # Увеличиваем до диапазона 50-80%
+            corrected_val = 50 + ((float_val - 30) / 30) * 30
+        else:  # Для значений выше 60% - меньшая коррекция
+            corrected_val = 80 + ((float_val - 60) / 40) * 20
+        
+        # Сохраняем скорректированное значение, но не больше 100
+        energy_values_float[k] = min(corrected_val, 100.0)
     
     # Определяем вертикальные позиции чакр (относительные координаты по оси Y)
     # Значения соответствуют положению чакр в теле человека от низа (0) до верха (1)
@@ -179,17 +196,29 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
                 continue
             
             # Альфа-канал определяет прозрачность (уменьшается к краю ауры)
-            # Чем дальше от силуэта, тем прозрачнее
+            # Улучшенная версия с более плавным переходом и лучшей видимостью
             if body_dist <= 0:
-                alpha = int(255 * 0.7)  # Максимальная непрозрачность 70%
+                # Максимальная непрозрачность 80% (увеличена с 70%)
+                alpha = int(255 * 0.8)
             else:
                 # Находим максимальный радиус для всех активных чакр
                 max_chakra_radius = max([chakra_radius[c] for c in chakra_influence]) if chakra_influence else base_radius
-                alpha_factor = 1.0 - (body_dist / max_chakra_radius)
-                if alpha_factor < 0:
+                
+                # Рассчитываем фактор непрозрачности с нелинейным затуханием
+                # Это делает край ауры более заметным, с более плавным переходом
+                dist_ratio = body_dist / max_chakra_radius
+                
+                if dist_ratio >= 1.0:
                     alpha = 0
                 else:
-                    alpha = int(255 * alpha_factor * 0.7)
+                    # Применяем нелинейное преобразование для более заметного свечения
+                    # 1) Более медленное затухание в начале (ближе к телу)
+                    # 2) Более быстрое затухание к краю ауры
+                    # Функция: 1 - (dist_ratio^0.7) даёт более плавное и медленное затухание
+                    alpha_factor = 1.0 - pow(dist_ratio, 0.7)
+                    
+                    # Базовый уровень непрозрачности увеличен до 80%
+                    alpha = int(255 * alpha_factor * 0.8)
             
             # Устанавливаем цвет пикселя
             aura[y, x] = [color[0], color[1], color[2], alpha]
@@ -444,7 +473,7 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
 
 def overlay_aura_on_photo(photo: np.ndarray, aura: np.ndarray) -> np.ndarray:
     """
-    Накладывает изображение ауры на фотографию.
+    Накладывает изображение ауры на фотографию с улучшенными эффектами.
     
     Args:
         photo (np.ndarray): Исходное фото
@@ -469,20 +498,43 @@ def overlay_aura_on_photo(photo: np.ndarray, aura: np.ndarray) -> np.ndarray:
             photo_rgba = cv2.cvtColor(photo, cv2.COLOR_RGB2RGBA)
         else:
             photo_rgba = photo.copy()
-        
+            
         # Создаем копию для результата
         result = photo_rgba.copy()
         
+        # УЛУЧШЕНИЕ: Применяем небольшое размытие к ауре для более мягких переходов
+        # Это создаст эффект свечения
+        aura_blurred = aura.copy()
+        aura_blurred = cv2.GaussianBlur(aura_blurred, (9, 9), 3)
+        
+        # УЛУЧШЕНИЕ: Увеличиваем яркость ауры для более заметного эффекта
+        # Увеличиваем цветовые каналы на 30%
+        brightness_boost = 1.3
+        for c in range(3):  # RGB каналы
+            aura_blurred[:, :, c] = np.clip(aura_blurred[:, :, c] * brightness_boost, 0, 255)
+        
+        # УЛУЧШЕНИЕ: Создаем эффект свечения/размытия
+        glow_strength = 0.8  # Сила эффекта свечения (0.0 - 1.0)
+        
         # Быстрый метод наложения без циклов
         for c in range(3):  # Для каждого цветового канала (RGB)
-            # Формула смешивания: result = (1-alpha)*background + alpha*foreground
-            alpha_channel = aura[:, :, 3] / 255.0  # Нормализуем альфа-канал от 0 до 1
+            # Нормализуем альфа-канал от 0 до 1
+            alpha_channel = aura_blurred[:, :, 3] / 255.0
+            
+            # УЛУЧШЕНИЕ: Усиливаем альфа-канал для более выраженного эффекта
+            # Нелинейное усиление альфа для более заметного эффекта даже слабой ауры
+            enhanced_alpha = np.power(alpha_channel, 0.7) * glow_strength
             
             # Расширяем форму для поэлементных операций
-            alpha_3d = alpha_channel[:, :, np.newaxis]
+            alpha_3d = enhanced_alpha[:, :, np.newaxis]
             
-            # Применяем альфа-смешивание
-            result[:, :, c] = (1 - alpha_3d[:, :, 0]) * photo_rgba[:, :, c] + alpha_3d[:, :, 0] * aura[:, :, c]
+            # Применяем улучшенное альфа-смешивание
+            # Использовем аддитивное смешивание для более яркого эффекта свечения
+            # Формула: result = background + alpha_enhanced * foreground
+            result[:, :, c] = np.clip(
+                photo_rgba[:, :, c] + alpha_3d[:, :, 0] * aura_blurred[:, :, c] * 0.7,
+                0, 255
+            )
         
         # Преобразуем результат в целые числа
         result = result.astype(np.uint8)
@@ -492,4 +544,6 @@ def overlay_aura_on_photo(photo: np.ndarray, aura: np.ndarray) -> np.ndarray:
     except Exception as e:
         # Логируем ошибку и возвращаем исходное изображение
         print(f"Ошибка при наложении ауры: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
         return photo
