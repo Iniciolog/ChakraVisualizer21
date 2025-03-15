@@ -208,10 +208,13 @@ def add_biofield_3d(fig, energy_values):
         # Определяем, является ли это слоем свечения
         is_glow_layer = i >= layers
         
+        # Инициализируем индекс свечения, если это слой свечения
+        glow_index = i - layers if is_glow_layer else 0
+        
         # Scale based on the layer 
         if is_glow_layer:
             # Свечение имеет больший размер и меньшую прозрачность
-            glow_index = i - layers
+            # glow_index уже инициализирован выше
             scale = 0.3 - (glow_index * 0.15)  # Постепенно затухает
             base_opacity = 0.15  # Более прозрачное свечение
         else:
@@ -308,5 +311,8 @@ def calculate_layer_color(energy_values, layer_index, total_layers):
         blended_color = [int(c / weight_sum) for c in blended_color]
     else:
         blended_color = [0, 0, 0]  # Default to black if no energy
+        
+    # Ensure colors are valid (between 0 and 255)
+    blended_color = [max(0, min(c, 255)) for c in blended_color]
     
     return blended_color
