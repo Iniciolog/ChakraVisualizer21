@@ -326,11 +326,7 @@ with upload_col2:
                     unsafe_allow_html=True
                 )
         
-        # Add button to return to manual mode
-        if st.button(get_text("use_manual_values")):
-            st.session_state.report_processed = False
-            st.session_state.report_analysis = None
-            st.rerun()
+        # Убрана кнопка возврата к ручному режиму, поскольку его больше нет
 
 # Divider
 st.markdown("---")
@@ -340,50 +336,38 @@ col1, col2 = st.columns([1, 2])
 
 with col1:
     st.header(get_text("param_header"))
-    st.markdown(get_text("param_desc"))
     
     # Убедимся, что все чакры имеют значения
     for chakra in chakra_data:
         if chakra['name'] not in st.session_state.energy_values:
             st.session_state.energy_values[chakra['name']] = 100
     
-    # Create sliders for each chakra
+    # Проверяем, есть ли данные из диагностического отчета
+    if st.session_state.report_processed and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+        st.success(get_text("diagnostic_data_used"))
+        st.markdown(get_text("chakra_values_auto_calculated"))
+    else:
+        # Если нет данных отчета, показываем информационное сообщение
+        st.warning(get_text("no_diagnostic_data"), icon="⚠️")
+        st.markdown(get_text("please_upload_report"))
+    
+    # Показываем текущие значения энергии чакр в виде таблицы
+    st.markdown("### " + get_text("chakra_energy_values"))
+    
     for chakra in chakra_data:
         chakra_name = chakra['name']
         chakra_name_display = chakra['name_ru'] if st.session_state.language == 'ru' else chakra['name']
         sanskrit_name_display = chakra['sanskrit_name_ru'] if st.session_state.language == 'ru' else chakra['sanskrit_name']
         color_hex = chakra['color_hex']
         
-        # Display a color sample with the chakra name
+        # Display a color sample with the chakra name and energy value
         st.markdown(
-            f"<div style='display: flex; align-items: center;'>"
+            f"<div style='display: flex; align-items: center; margin-bottom: 10px;'>"
             f"<div style='background-color: {color_hex}; width: 20px; height: 20px; border-radius: 50%; margin-right: 10px;'></div>"
-            f"<span>{chakra_name_display} ({sanskrit_name_display})</span>"
+            f"<span><b>{chakra_name_display}</b> ({sanskrit_name_display}): <b>{st.session_state.energy_values[chakra_name]}%</b></span>"
             f"</div>",
             unsafe_allow_html=True
         )
-        
-        # Показываем текущее значение
-        st.write(f"{get_text('current_energy')}: {st.session_state.energy_values[chakra_name]}%")
-        
-        # Create slider for this chakra
-        energy_value = st.slider(
-            f"{chakra_name} {get_text('energy_suffix')}",
-            0, 100, 
-            int(st.session_state.energy_values[chakra_name]),  # Явное преобразование в int
-            key=f"{chakra_name}_slider",
-            label_visibility="collapsed"
-        )
-        
-        # Update session state
-        st.session_state.energy_values[chakra_name] = energy_value
-    
-    # Add a reset button
-    if st.button(get_text("reset_button")):
-        for chakra in chakra_data:
-            chakra_name = chakra['name']
-            st.session_state.energy_values[chakra_name] = 100
-        st.rerun()
 
 with col2:
     st.header(get_text("visual_header"))
@@ -396,38 +380,42 @@ with col2:
         fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
         st.plotly_chart(fig_3d, use_container_width=True, height=700)
         
-    # Добавляем кнопку для создания фото с аурой
-    if st.button("📸 Сделать фото ауры" if st.session_state.language == 'ru' else "📸 Take Aura Photo"):
-        # Переключаем на режим фотографии
-        if 'aura_photo_mode' not in st.session_state:
-            st.session_state.aura_photo_mode = True
-        else:
-            st.session_state.aura_photo_mode = True
-        st.rerun()
+    # Добавляем кнопку для создания фото с аурой только если есть данные отчета
+    if st.session_state.report_processed and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+        if st.button("📸 Сделать фото ауры" if st.session_state.language == 'ru' else "📸 Take Aura Photo"):
+            # Переключаем на режим фотографии
+            if 'aura_photo_mode' not in st.session_state:
+                st.session_state.aura_photo_mode = True
+            else:
+                st.session_state.aura_photo_mode = True
+            st.rerun()
+    else:
+        # Если нет данных отчета, показываем сообщение вместо кнопки
+        st.warning(get_text("no_report_for_aura"), icon="⚠️")
         
 # Если включен режим фотографии с аурой, показываем интерфейс для фото
 if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
     st.markdown("---")  # Разделитель
     
-    # Проверка на наличие энергетических значений чакр
+    # Проверка на наличие энергетических значений чакр из анализа
     if 'report_processed' in st.session_state and st.session_state.report_processed:
-        # Если был обработан диагностический отчет, берем последние актуальные значения
+        # Если был обработан диагностический отчет, берем актуальные значения
         if 'report_analysis' in st.session_state and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
-            # Обновляем сохраненные значения из отчета
+            # Получаем значения из отчета
             report_energy_values = st.session_state.report_analysis['chakra_energy']
             energy_values_float = {k: float(v) for k, v in report_energy_values.items()}
             # Сохраняем значения из отчета для режима ауры
             st.session_state.energy_values_aura = energy_values_float
+            
+            # Используем сохраненные значения чакр для создания фото
+            capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
+        else:
+            # Если в отчете нет данных о чакрах
+            st.error(get_text("no_chakra_data_in_report"))
     else:
-        # Если данных из отчета нет, используем текущие слайдеры
-        energy_values_float = {k: float(v) for k, v in st.session_state.energy_values.items()}
-        
-    # Если уже есть сохраненные значения для ауры, используем их
-    if 'energy_values_aura' not in st.session_state:
-        st.session_state.energy_values_aura = energy_values_float
-    
-    # Используем сохраненные значения чакр для создания фото
-    capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
+        # Если отчет не загружен, показываем сообщение
+        st.warning(get_text("no_report_for_aura"), icon="⚠️")
+        st.info(get_text("please_upload_report_for_aura"))
     
     # Кнопка для возврата к основному режиму
     if st.button("↩️ Вернуться к основному режиму" if st.session_state.language == 'ru' else "↩️ Return to main mode"):
