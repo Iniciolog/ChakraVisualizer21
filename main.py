@@ -409,14 +409,21 @@ with col2:
 if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
     st.markdown("---")  # Разделитель
     
-    # Вызываем функцию для создания фото с аурой
-    # Преобразуем все значения энергии в float перед вызовом функции
-    energy_values_float = {k: float(v) for k, v in st.session_state.energy_values.items()}
-    # Сохраняем значения энергии чакр в session_state чтобы они не сбрасывались
-    if 'energy_values_aura' not in st.session_state:
-        st.session_state.energy_values_aura = energy_values_float
+    # Проверка на наличие энергетических значений чакр
+    if 'report_processed' in st.session_state and st.session_state.report_processed:
+        # Если был обработан диагностический отчет, берем последние актуальные значения
+        if 'report_analysis' in st.session_state and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+            # Обновляем сохраненные значения из отчета
+            report_energy_values = st.session_state.report_analysis['chakra_energy']
+            energy_values_float = {k: float(v) for k, v in report_energy_values.items()}
+            # Сохраняем значения из отчета для режима ауры
+            st.session_state.energy_values_aura = energy_values_float
     else:
-        # Обновляем значения, если они изменились
+        # Если данных из отчета нет, используем текущие слайдеры
+        energy_values_float = {k: float(v) for k, v in st.session_state.energy_values.items()}
+        
+    # Если уже есть сохраненные значения для ауры, используем их
+    if 'energy_values_aura' not in st.session_state:
         st.session_state.energy_values_aura = energy_values_float
     
     # Используем сохраненные значения чакр для создания фото
