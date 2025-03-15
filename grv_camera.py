@@ -1162,7 +1162,7 @@ def display_grv_interface(lang: str = 'ru'):
         
         # Отображаем информацию
         if organ_status_info:
-            st.markdown(f"**Статус:** {organ_status_info['status_description']}")
+            st.markdown(f"**Статус:** {organ_status_info['status_label']}")
             st.markdown(f"**Параметры:**")
             
             for param in organ_status_info['parameters']:
