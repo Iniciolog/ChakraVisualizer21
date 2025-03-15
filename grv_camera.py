@@ -826,15 +826,15 @@ class GRVCamera:
                 # Сохраняем в ГРВ-специфичную переменную
                 st.session_state.chakra_values_from_grv = chakra_values
                 
-                # Синхронизируем с основной визуализацией для мгновенного применения
-                if 'energy_values' in st.session_state:
-                    for chakra_name, energy_value in chakra_values.items():
-                        # Проверяем допустимость значения
-                        if isinstance(energy_value, (int, float)) and 0 <= energy_value <= 100:
-                            st.session_state.energy_values[chakra_name] = energy_value
-                            print(f"Синхронизация чакры {chakra_name}: {energy_value}")
-                        else:
-                            print(f"Недопустимое значение чакры {chakra_name}: {energy_value}")
+                # Больше не синхронизируем значения с основной визуализацией,
+                # чтобы разделить функциональность ГРВ и биорезонанса
+                # и чтобы они не влияли друг на друга
+                for chakra_name, energy_value in chakra_values.items():
+                    # Проверяем допустимость значения только для логирования
+                    if isinstance(energy_value, (int, float)) and 0 <= energy_value <= 100:
+                        print(f"Чакра {chakra_name}: {energy_value}")
+                    else:
+                        print(f"Недопустимое значение чакры {chakra_name}: {energy_value}")
             
             # Устанавливаем флаг загрузки сессии
             st.session_state.session_loaded = True
