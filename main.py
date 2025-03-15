@@ -412,7 +412,15 @@ if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
     # Вызываем функцию для создания фото с аурой
     # Преобразуем все значения энергии в float перед вызовом функции
     energy_values_float = {k: float(v) for k, v in st.session_state.energy_values.items()}
-    capture_aura_photo(energy_values_float, st.session_state.language)
+    # Сохраняем значения энергии чакр в session_state чтобы они не сбрасывались
+    if 'energy_values_aura' not in st.session_state:
+        st.session_state.energy_values_aura = energy_values_float
+    else:
+        # Обновляем значения, если они изменились
+        st.session_state.energy_values_aura = energy_values_float
+    
+    # Используем сохраненные значения чакр для создания фото
+    capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
     
     # Кнопка для возврата к основному режиму
     if st.button("↩️ Вернуться к основному режиму" if st.session_state.language == 'ru' else "↩️ Return to main mode"):
