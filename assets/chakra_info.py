@@ -197,6 +197,14 @@ app_text = {
         "chakra_impact": "Chakra Impact Analysis",
         "estimated_impact": "Estimated impact on chakras based on diagnostic results:",
         "use_manual_values": "Return to Manual Mode",
+        "diagnostic_data_used": "Using diagnostic data from the report",
+        "chakra_values_auto_calculated": "Chakra energy values are automatically calculated from the diagnostic data. Manual adjustments are not available.",
+        "no_diagnostic_data": "No diagnostic data available",
+        "please_upload_report": "Please upload a diagnostic report to visualize chakra energies based on data analysis.",
+        "chakra_energy_values": "Current Energy Values",
+        "no_chakra_data_in_report": "No chakra energy data found in the report. The report may be incomplete or in an unsupported format.",
+        "no_report_for_aura": "No diagnostic report data available for aura photo",
+        "please_upload_report_for_aura": "Please upload a diagnostic report first to generate an aura photo based on authentic data.",
         
         # Organ visualization texts
         "organ_visualization_tab": "Organ Visualization",
@@ -265,6 +273,14 @@ app_text = {
         "chakra_impact": "Анализ Влияния на Чакры",
         "estimated_impact": "Предполагаемое влияние на чакры на основе результатов диагностики:",
         "use_manual_values": "Вернуться в Ручной Режим",
+        "diagnostic_data_used": "Используются данные из диагностического отчета",
+        "chakra_values_auto_calculated": "Значения энергии чакр автоматически рассчитаны из данных диагностики. Ручная настройка не доступна.",
+        "no_diagnostic_data": "Нет данных диагностики",
+        "please_upload_report": "Пожалуйста, загрузите диагностический отчет для визуализации энергии чакр на основе анализа данных.",
+        "chakra_energy_values": "Текущие значения энергии",
+        "no_chakra_data_in_report": "В отчете не найдены данные об энергии чакр. Отчет может быть неполным или в неподдерживаемом формате.",
+        "no_report_for_aura": "Нет данных диагностического отчета для фото ауры",
+        "please_upload_report_for_aura": "Пожалуйста, сначала загрузите диагностический отчет, чтобы создать фото ауры на основе настоящих данных.",
         
         # Органная визуализация
         "organ_visualization_tab": "Визуализация Органов",
