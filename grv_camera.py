@@ -823,6 +823,10 @@ def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: Finge
     Returns:
         bool: True если обработка успешна, иначе False
     """
+    # Импортируем необходимые библиотеки
+    import streamlit as st
+    import numpy as np
+    import cv2
     try:
         # Создаем локальный словарь названий пальцев, если не передан
         if finger_options is None:
@@ -919,6 +923,10 @@ def display_grv_interface(lang: str = 'ru'):
     Args:
         lang (str): Язык интерфейса ('ru' или 'en')
     """
+    # Импортируем необходимые библиотеки
+    import streamlit as st
+    import matplotlib.pyplot as plt
+    
     # Сбрасываем флаг загрузки сессии при новом рендеринге страницы
     # Но делаем это только если этот рендеринг не был вызван загрузкой сессии
     if 'session_loaded' in st.session_state and st.session_state.session_loaded:
