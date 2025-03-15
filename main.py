@@ -550,6 +550,55 @@ if st.session_state.report_processed and st.session_state.report_analysis:
         else:
             st.info(get_text("select_organ"))
 
+# GRV Scanning section
+st.header(get_text("grv_tab_header"))
+st.markdown(get_text("grv_tab_info"))
+
+# Show attached PDF icon and documentation link
+col1_doc, col2_doc = st.columns([1, 3])
+with col1_doc:
+    st.markdown("""
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="https://raw.githubusercontent.com/replit/super-codex/main/assets/grv_device_icon.png" alt="ГРВ-ТБК 3.3" width="100"/>
+        <p>ГРВ-ТБК 3.3</p>
+    </div>
+    """, unsafe_allow_html=True)
+with col2_doc:
+    # Display a link to the documentation
+    st.markdown("""
+    📄 [ГРВ-ТБК 3.3 Документация](https://grv-bio.ru/tbk-manual)
+    """)
+    
+    # Let user know the GRV camera integration is ready
+    st.info(
+        "Интеграция с аппаратом ГРВ-ТБК 3.3 подготовлена и готова к использованию. "
+        "Подключите устройство к USB-порту компьютера для начала работы." 
+        if st.session_state.language == 'ru' else 
+        "Integration with GRV-TBK 3.3 device is prepared and ready to use. "
+        "Connect the device to a USB port on your computer to begin."
+    )
+
+# Initialize GRV mode session state
+if 'grv_mode' not in st.session_state:
+    st.session_state.grv_mode = False
+
+# Button to start GRV interface
+if st.button(get_text("grv_connect"), type="primary"):
+    st.session_state.grv_mode = True
+    st.rerun()
+
+# Display GRV interface if mode is active
+if st.session_state.grv_mode:
+    display_grv_interface(st.session_state.language)
+    
+    # Button to exit GRV mode
+    if st.button(get_text("grv_disconnect"), type="secondary"):
+        st.session_state.grv_mode = False
+        st.rerun()
+
+# Divider
+st.markdown("---")
+
 # Detailed information section
 st.header(get_text("info_header"))
 st.markdown(get_text("info_intro"))
