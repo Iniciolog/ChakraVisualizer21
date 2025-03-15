@@ -668,6 +668,11 @@ class GRVCamera:
             bool: True, если сохранение успешно, иначе False
         """
         try:
+            import base64
+            import cv2
+            import json
+            import numpy as np
+            
             # Создаем словарь с данными сессии
             # Преобразуем словарь обработанных данных в сериализуемый формат
             processed_data_serializable = {}
@@ -676,11 +681,26 @@ class GRVCamera:
                 processed_data_serializable[hand_key] = {}
                 for finger, data in fingers.items():
                     finger_key = finger.name
-                    # Исключаем изображения (большой размер)
+                    # Создаем копию данных без изображений
                     data_copy = data.copy()
                     if 'processed_image' in data_copy:
                         del data_copy['processed_image']
                     processed_data_serializable[hand_key][finger_key] = data_copy
+            
+            # Сохраняем изображения пальцев в формате Base64
+            finger_images_serializable = {}
+            for hand, fingers in self.finger_images.items():
+                hand_key = hand.name
+                finger_images_serializable[hand_key] = {}
+                for finger, img in fingers.items():
+                    finger_key = finger.name
+                    if img is not None:
+                        # Преобразуем изображение в строку base64
+                        _, buffer = cv2.imencode('.png', img)
+                        img_b64 = base64.b64encode(buffer).decode('utf-8')
+                        finger_images_serializable[hand_key][finger_key] = img_b64
+                    else:
+                        finger_images_serializable[hand_key][finger_key] = None
             
             # Получаем модель энергии
             energy_model = self.calculate_energy_model()
@@ -688,12 +708,12 @@ class GRVCamera:
             # Итоговые данные для сохранения
             session_data = {
                 "processed_data_serializable": processed_data_serializable,
+                "finger_images_serializable": finger_images_serializable,
                 "chakra_values": energy_model.get("chakra_values", {}),
                 "balance_index": energy_model.get("balance_index", 0)
             }
             
             # Сохраняем данные в формате JSON
-            import json
             with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(session_data, f, ensure_ascii=False, indent=4)
             
@@ -717,8 +737,13 @@ class GRVCamera:
             bool: True, если загрузка успешна, иначе False
         """
         try:
-            # Загружаем данные из JSON файла
+            import base64
+            import cv2
             import json
+            import numpy as np
+            import streamlit as st
+            
+            # Загружаем данные из JSON файла
             with open(filename, 'r', encoding='utf-8') as f:
                 session_data = json.load(f)
             
@@ -740,10 +765,38 @@ class GRVCamera:
                                 # Восстанавливаем данные для пальца
                                 self.processed_data[hand][finger] = data
             
+            # Восстанавливаем изображения пальцев
+            if "finger_images_serializable" in session_data:
+                # Сбрасываем текущие изображения
+                self.finger_images = {
+                    HandType.LEFT: {ft: None for ft in FingerType},
+                    HandType.RIGHT: {ft: None for ft in FingerType}
+                }
+                
+                # Загружаем изображения из файла
+                for hand_key, fingers in session_data["finger_images_serializable"].items():
+                    hand = HandType[hand_key] if hand_key in [h.name for h in HandType] else None
+                    if hand:
+                        for finger_key, img_b64 in fingers.items():
+                            finger = FingerType[finger_key] if finger_key in [f.name for f in FingerType] else None
+                            if finger and img_b64:
+                                # Восстанавливаем изображение из base64
+                                img_data = base64.b64decode(img_b64)
+                                nparr = np.frombuffer(img_data, np.uint8)
+                                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                                self.finger_images[hand][finger] = img
+                                
+                                # Также сохраняем изображение на диск для совместимости
+                                os.makedirs(self.temp_folder, exist_ok=True)
+                                filename = f"{self.temp_folder}/grv_{hand.name.lower()}_{finger.name.lower()}.jpg"
+                                cv2.imwrite(filename, img)
+            
             # Сохраняем загруженные данные в session_state для дальнейшего использования
             if "chakra_values" in session_data:
-                import streamlit as st
                 st.session_state.chakra_values_from_grv = session_data["chakra_values"]
+            
+            # Устанавливаем флаг загрузки сессии
+            st.session_state.session_loaded = True
             
             print(f"Данные сессии загружены из файла: {filename}")
             return True
@@ -1181,11 +1234,55 @@ def display_grv_interface(lang: str = 'ru'):
                     f"Session successfully loaded from file {uploaded_session.name}"
                 )
                 
+                # Обновляем статус загрузки в интерфейсе
+                st.subheader("Загруженные данные" if lang == 'ru' else "Loaded Data")
+                
+                # Показываем загруженные изображения
+                loaded_images_count = 0
+                for hand in HandType:
+                    for finger in FingerType:
+                        if grv.finger_images[hand][finger] is not None:
+                            loaded_images_count += 1
+                
+                st.info(
+                    f"Загружено {loaded_images_count} из 10 ГРВ-грамм" if lang == 'ru' else
+                    f"Loaded {loaded_images_count} out of 10 GRV-grams"
+                )
+                
+                # Если есть загруженные данные по чакрам, показываем их
+                if "chakra_values_from_grv" in st.session_state:
+                    energy_values = st.session_state.chakra_values_from_grv
+                    
+                    # Отображаем энергетический баланс
+                    st.subheader("Энергетическая модель" if lang == 'ru' else "Energy Model")
+                    
+                    # Отображаем гистограмму значений чакр
+                    import matplotlib.pyplot as plt
+                    fig, ax = plt.subplots(figsize=(10, 5))
+                    chakras = list(energy_values.keys())
+                    values = list(energy_values.values())
+                    
+                    ax.bar(chakras, values, color=['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'])
+                    ax.set_ylim(0, 100)
+                    ax.set_ylabel("Энергия (%)" if lang == 'ru' else "Energy (%)")
+                    ax.set_title("Энергетический баланс чакр" if lang == 'ru' else "Chakra Energy Balance")
+                    
+                    st.pyplot(fig)
+                    
+                    # Рассчитываем индекс баланса
+                    balance_index = grv.calculate_balance_index(energy_values)
+                    
+                    # Отображаем индекс баланса
+                    st.metric(
+                        "Индекс баланса" if lang == 'ru' else "Balance Index", 
+                        f"{balance_index:.2f}%"
+                    )
+                    
                 # Устанавливаем флаг, что сессия загружена
-                if 'session_loaded' not in st.session_state:
-                    st.session_state.session_loaded = True
-                    # Перезагружаем страницу только один раз после загрузки
-                    st.rerun()
+                import streamlit as st
+                st.session_state.session_loaded = True
+                # Перезагружаем страницу чтобы обновить интерфейс
+                st.rerun()
             else:
                 st.error(
                     "Ошибка при загрузке сессии" if lang == 'ru' else 
