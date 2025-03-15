@@ -770,14 +770,21 @@ def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: Finge
 
 def display_grv_interface(lang: str = 'ru'):
     """
-    Отображение интерфейса для работы с ГРВ-изображениями в Streamlit
+    Отображение интерфейса для работы с ГРВ-изображениями в Streamlit.
+    Обновленная версия для работы только с загрузкой файлов ГРВ-грамм без подключения к физической камере.
     
     Args:
         lang (str): Язык интерфейса ('ru' или 'en')
     """
-    st.title("ГРВ Анализ" if lang == 'ru' else "GRV Analysis")
+    st.title("Анализ ГРВ-грамм" if lang == 'ru' else "GRV-gram Analysis")
     
-    # Инициализация GRV-камеры, если она еще не инициализирована
+    # Показываем информацию о работе с загрузкой снимков
+    st.info(
+        "Загрузите имеющиеся ГРВ-граммы для каждого пальца обеих рук для получения энергетической модели." if lang == 'ru' else
+        "Upload existing GRV-grams for each finger of both hands to get an energy model."
+    )
+    
+    # Инициализация GRV-процессора, если он еще не инициализирован
     if 'grv_camera' not in st.session_state:
         st.session_state.grv_camera = GRVCamera(lang=lang)
     
@@ -822,11 +829,20 @@ def display_grv_interface(lang: str = 'ru'):
     selected_finger = list(finger_options.keys())[list(finger_options.values()).index(selected_finger_label)]
     
     # Загрузка ГРВ-изображения
-    st.subheader("Загрузка ГРВ-изображения" if lang == 'ru' else "Upload GRV Image")
+    st.subheader("Загрузка ГРВ-граммы" if lang == 'ru' else "Upload GRV-gram")
+    
+    # Информация и подсказка по формату загружаемых файлов
+    st.markdown(
+        "Файлы ГРВ-грамм должны быть в формате JPEG или PNG. "
+        "Рекомендуется использовать снимки, полученные с помощью программы РОК ГРВ-сканер." if lang == 'ru' else
+        "GRV-gram files should be in JPEG or PNG format. "
+        "It is recommended to use images obtained using the ROK GRV-scanner program."
+    )
     
     uploaded_file = st.file_uploader(
-        "Выберите файл ГРВ-изображения" if lang == 'ru' else "Choose a GRV image file", 
-        type=["jpg", "jpeg", "png"]
+        "Выберите файл ГРВ-граммы" if lang == 'ru' else "Choose a GRV-gram file", 
+        type=["jpg", "jpeg", "png"],
+        key=f"grv_upload_{selected_hand.name}_{selected_finger.name}"
     )
     
     if uploaded_file is not None:
@@ -834,7 +850,7 @@ def display_grv_interface(lang: str = 'ru'):
         process_uploaded_grv_image(grv, uploaded_file, selected_hand, selected_finger, lang)
     
     # Панель состояния - показываем, какие пальцы уже отсканированы
-    st.subheader("Статус сканирования" if lang == 'ru' else "Scanning Status")
+    st.subheader("Статус загрузки ГРВ-грамм" if lang == 'ru' else "GRV-gram Upload Status")
     
     # Создаем сетку для отображения статуса
     hand_cols = st.columns(2)
@@ -852,6 +868,7 @@ def display_grv_interface(lang: str = 'ru'):
                         st.error(finger_options[finger])
     
     # Кнопки для анализа и сохранения/загрузки
+    st.subheader("Анализ и управление данными" if lang == 'ru' else "Analysis and Data Management")
     col1, col2, col3 = st.columns(3)
     
     # Кнопка анализа
@@ -865,8 +882,8 @@ def display_grv_interface(lang: str = 'ru'):
                     break
         
         if not all_scanned:
-            st.warning("Не все пальцы отсканированы. Пожалуйста, загрузите все изображения." if lang == 'ru' else 
-                      "Not all fingers have been scanned. Please upload all images.")
+            st.warning("Не все пальцы загружены. Для полного анализа загрузите ГРВ-граммы всех пальцев." if lang == 'ru' else 
+                      "Not all fingers have been uploaded. For a complete analysis, upload GRV-grams of all fingers.")
         else:
             with st.spinner("Обработка изображений..." if lang == 'ru' else "Processing images..."):
                 # Обрабатываем все изображения
