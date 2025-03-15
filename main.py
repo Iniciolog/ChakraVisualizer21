@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import Dict, List, Any, Optional
 from chakra_visualization import create_chakra_visualization
 from chakra_visualization_3d import create_chakra_visualization_3d
 from assets.chakra_info import chakra_data, app_text
@@ -9,6 +10,27 @@ from diagnostic_analyzer import DiagnosticReportAnalyzer
 from organs_visualization import OrgansVisualizer
 from organ_detail_visualization import OrganDetailVisualizer
 from aura_photo import capture_aura_photo
+
+# Настройки страницы определены ниже в коде (строка ~160)
+
+# Глобальная функция для минимизации перезагрузок страницы
+def safe_update_session_state(key: str, value: Any) -> None:
+    """
+    Безопасно обновляет значение в session_state без необходимости перезагрузки страницы.
+    
+    Args:
+        key (str): Ключ в session_state
+        value (Any): Новое значение
+    """
+    if key in st.session_state:
+        current_value = st.session_state[key]
+        # Если значение - словарь, объединяем их вместо полной замены
+        if isinstance(current_value, dict) and isinstance(value, dict):
+            current_value.update(value)
+        else:
+            st.session_state[key] = value
+    else:
+        st.session_state[key] = value
 from grv_camera import display_grv_interface
 
 # Initialize session state for language and view mode
@@ -644,191 +666,201 @@ if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
            "↩️ To exit aura photo mode, uncheck the checkbox above")
 
 # Добавляем секцию для органной визуализации, если есть данные анализа
-if st.session_state.report_processed and st.session_state.report_analysis:
-    st.header(get_text("organ_visualization_tab"))
-    st.markdown(get_text("organ_visualization_info"))
-    
-    # Создаем две колонки: одна для визуализации, другая для деталей
-    # Используем другую пропорцию для лучшего отображения нового изображения 
-    organ_col1, organ_col2 = st.columns([2, 1])
-    
-    with organ_col1:
-        # Инициализируем визуализатор органов
-        has_error = False  # Флаг ошибки для контроля отображения
-        organ_fig = None   # Инициализируем переменную для фигуры органов
+# Создаем отдельную вкладку для визуализации органов, чтобы избежать конфликтов состояния
+st.header(get_text("organ_visualization_tab"))
+
+# Проверяем, есть ли данные для отображения
+if 'report_processed' not in st.session_state or not st.session_state.report_processed or 'report_analysis' not in st.session_state:
+    st.warning(get_text("no_report_data"))
+else:
+    # Переместим логику в функцию, чтобы изолировать состояние
+    def render_organ_visualization():
+        st.markdown(get_text("organ_visualization_info"))
         
-        if 'diagnostic_data' in st.session_state.report_analysis:
-            # Проверяем данные для безопасности
-            if not isinstance(st.session_state.report_analysis['diagnostic_data'], dict):
-                st.warning("Данные диагностики имеют неверный формат" if st.session_state.language == 'ru' else 
-                           "Diagnostic data has incorrect format")
+        # Создаем две колонки: одна для визуализации, другая для деталей
+        # Используем другую пропорцию для лучшего отображения нового изображения 
+        organ_col1, organ_col2 = st.columns([2, 1])
+        
+        with organ_col1:
+            # Инициализируем визуализатор органов
+            has_error = False  # Флаг ошибки для контроля отображения
+            organ_fig = None   # Инициализируем переменную для фигуры органов
+            
+            if 'diagnostic_data' in st.session_state.report_analysis:
+                # Проверяем данные для безопасности
+                if not isinstance(st.session_state.report_analysis['diagnostic_data'], dict):
+                    st.warning("Данные диагностики имеют неверный формат" if st.session_state.language == 'ru' else 
+                               "Diagnostic data has incorrect format")
+                    has_error = True
+                
+                if not has_error:
+                    try:
+                        # Создаем визуализатор с обработкой ошибок
+                        organ_visualizer = OrgansVisualizer(st.session_state.language)
+                        diagnostic_data = st.session_state.report_analysis['diagnostic_data']
+                        
+                        # Добавляем отладочный вывод
+                        print(f"DEBUG: Данные диагностики для визуализации органов: {diagnostic_data}")
+                        
+                        # Создаем визуализацию органов с обработкой ошибок
+                        organ_fig = organ_visualizer.create_organs_visualization(diagnostic_data)
+                        
+                        # Сохраняем ссылку на объект визуализатора в session_state, если он еще не существует
+                        if 'organ_visualizer' not in st.session_state:
+                            st.session_state.organ_visualizer = organ_visualizer
+                        
+                    except Exception as e:
+                        st.error(f"Ошибка при создании визуализации органов: {e}" if st.session_state.language == 'ru' else 
+                                 f"Error creating organ visualization: {e}")
+                        print(f"ERROR: Ошибка при создании визуализации органов: {e}")
+                        st.warning("Данные о состоянии органов недоступны" if st.session_state.language == 'ru' else 
+                                 "Organ status data is not available")
+                        has_error = True
+            else:
+                st.warning("Нет данных диагностики для отображения органов" if st.session_state.language == 'ru' else 
+                           "No diagnostic data available for organ visualization")
                 has_error = True
             
-            if not has_error:
-                try:
-                    # Создаем визуализатор с обработкой ошибок
-                    organ_visualizer = OrgansVisualizer(st.session_state.language)
-                    diagnostic_data = st.session_state.report_analysis['diagnostic_data']
+            # Если у нас есть визуализация органов и нет ошибок
+            if organ_fig is not None and not has_error:
+                # Сохраняем орган, который будет выделен на визуализации (для подсветки при наведении)
+                if 'highlighted_organ' not in st.session_state:
+                    st.session_state.highlighted_organ = None
                     
-                    # Добавляем отладочный вывод
-                    print(f"DEBUG: Данные диагностики для визуализации органов: {diagnostic_data}")
-                    
-                    # Создаем визуализацию органов с обработкой ошибок
-                    organ_fig = organ_visualizer.create_organs_visualization(diagnostic_data)
-                    
-                    # Сохраняем ссылку на объект визуализатора в session_state, если он еще не существует
-                    if 'organ_visualizer' not in st.session_state:
-                        st.session_state.organ_visualizer = organ_visualizer
-                    
-                except Exception as e:
-                    st.error(f"Ошибка при создании визуализации органов: {e}" if st.session_state.language == 'ru' else 
-                             f"Error creating organ visualization: {e}")
-                    print(f"ERROR: Ошибка при создании визуализации органов: {e}")
-                    st.warning("Данные о состоянии органов недоступны" if st.session_state.language == 'ru' else 
-                             "Organ status data is not available")
-                    has_error = True
-        else:
-            st.warning("Нет данных диагностики для отображения органов" if st.session_state.language == 'ru' else 
-                       "No diagnostic data available for organ visualization")
-            has_error = True
-        
-        # Если у нас есть визуализация органов и нет ошибок
-        if organ_fig is not None and not has_error:
-            # Сохраняем орган, который будет выделен на визуализации (для подсветки при наведении)
-            if 'highlighted_organ' not in st.session_state:
-                st.session_state.highlighted_organ = None
+                # Показываем визуализацию с подписями
+                st.pyplot(organ_fig)
                 
-            # Показываем визуализацию с подписями
-            st.pyplot(organ_fig)
-            
-            # Добавляем интерактивный выбор органа только через выпадающий список
-            st.markdown(f"### {get_text('select_organ')}:")
-            
-            # Добавляем интерактивные возможности (выбор органа из списка)
-            if 'selected_organ' not in st.session_state:
-                st.session_state.selected_organ = None
+                # Добавляем интерактивный выбор органа только через выпадающий список
+                st.markdown(f"### {get_text('select_organ')}:")
                 
-            # Создаем список органов для выбора
-            if 'organ_visualizer' in st.session_state:
-                organ_names = list(st.session_state.organ_visualizer.organs_positions.keys())
-                organ_names_localized = organ_names  # В будущем можно добавить локализацию названий органов
-                
-                # Выпадающий список для выбора органа
-                # Находим индекс текущего выбранного органа, если он есть
-                default_index = 0
-                if st.session_state.selected_organ in organ_names_localized:
-                    default_index = organ_names_localized.index(st.session_state.selected_organ)
-                
-                # Функция обработки изменения выбора органа
-                def on_organ_change():
-                    st.session_state.selected_organ = st.session_state.organ_selector
-                
-                selected_organ = st.selectbox(
-                    label=get_text("select_organ"),
-                    options=organ_names_localized,
-                    index=default_index,
-                    key="organ_selector",
-                    on_change=on_organ_change
-                )
-    
-    with organ_col2:
-        if st.session_state.selected_organ and 'organ_visualizer' in st.session_state:
-            # Получаем информацию о выбранном органе
-            if ('diagnostic_data' in st.session_state.report_analysis and 
-                isinstance(st.session_state.report_analysis['diagnostic_data'], dict) and 
-                st.session_state.report_analysis['diagnostic_data']):
-                try:
-                    # Добавляем отладочные сообщения
-                    print(f"DEBUG: Выбран орган для детализации: {st.session_state.selected_organ}")
-                    
-                    # Инициализируем визуализатор детальных изображений органов, если он еще не существует
-                    if 'organ_detail_visualizer' not in st.session_state:
-                        try:
-                            st.session_state.organ_detail_visualizer = OrganDetailVisualizer(st.session_state.language)
-                            print("DEBUG: Визуализатор деталей органов успешно создан")
-                        except Exception as e:
-                            print(f"ERROR: Не удалось создать визуализатор деталей органов: {e}")
-                            st.error(f"Ошибка при создании визуализатора деталей органов: {e}")
-                            # Не можем использовать return здесь, добавляем флаг ошибки
-                            has_error = True
-                    
-                    # Получаем информацию о выбранном органе с обработкой ошибок
-                    try:
-                        organ_details = st.session_state.organ_visualizer.get_organ_status_description(
-                            st.session_state.selected_organ, 
-                            st.session_state.report_analysis['diagnostic_data']
-                        )
-                        print(f"DEBUG: Получены детали для органа {st.session_state.selected_organ}: {organ_details['status']}")
-                    except Exception as e:
-                        print(f"ERROR: Ошибка при получении статуса органа: {e}")
-                        # Выбрасываем исключение дальше для общей обработки
-                        raise
-                except Exception as e:
-                    st.error(f"Ошибка при получении данных об органе: {e}")
-                    # Устанавливаем орган в None, чтобы пользователь мог выбрать другой
+                # Добавляем интерактивные возможности (выбор органа из списка)
+                if 'selected_organ' not in st.session_state:
                     st.session_state.selected_organ = None
-                    # Задаем пустые детали органа как запасной вариант
-                    organ_details = {
-                        'organ': st.session_state.selected_organ,
-                        'status': 'no_data',
-                        'status_label': get_text('no_data_organ'),
-                        'parameters': []
+                    
+                # Создаем список органов для выбора
+                if 'organ_visualizer' in st.session_state:
+                    organ_names = list(st.session_state.organ_visualizer.organs_positions.keys())
+                    organ_names_localized = organ_names  # В будущем можно добавить локализацию названий органов
+                    
+                    # Выпадающий список для выбора органа
+                    # Находим индекс текущего выбранного органа, если он есть
+                    default_index = 0
+                    if st.session_state.selected_organ in organ_names_localized:
+                        default_index = organ_names_localized.index(st.session_state.selected_organ)
+                    
+                    # Функция обработки изменения выбора органа
+                    def on_organ_change():
+                        st.session_state.selected_organ = st.session_state.organ_selector
+                    
+                    selected_organ = st.selectbox(
+                        label=get_text("select_organ"),
+                        options=organ_names_localized,
+                        index=default_index,
+                        key="organ_selector",
+                        on_change=on_organ_change
+                    )
+        
+        with organ_col2:
+            if 'selected_organ' in st.session_state and st.session_state.selected_organ and 'organ_visualizer' in st.session_state:
+                # Получаем информацию о выбранном органе
+                if ('diagnostic_data' in st.session_state.report_analysis and 
+                    isinstance(st.session_state.report_analysis['diagnostic_data'], dict) and 
+                    st.session_state.report_analysis['diagnostic_data']):
+                    try:
+                        # Добавляем отладочные сообщения
+                        print(f"DEBUG: Выбран орган для детализации: {st.session_state.selected_organ}")
+                        
+                        # Инициализируем визуализатор детальных изображений органов, если он еще не существует
+                        if 'organ_detail_visualizer' not in st.session_state:
+                            try:
+                                st.session_state.organ_detail_visualizer = OrganDetailVisualizer(st.session_state.language)
+                                print("DEBUG: Визуализатор деталей органов успешно создан")
+                            except Exception as e:
+                                print(f"ERROR: Не удалось создать визуализатор деталей органов: {e}")
+                                st.error(f"Ошибка при создании визуализатора деталей органов: {e}")
+                                # Не можем использовать return здесь, добавляем флаг ошибки
+                                has_error = True
+                        
+                        # Получаем информацию о выбранном органе с обработкой ошибок
+                        try:
+                            organ_details = st.session_state.organ_visualizer.get_organ_status_description(
+                                st.session_state.selected_organ, 
+                                st.session_state.report_analysis['diagnostic_data']
+                            )
+                            print(f"DEBUG: Получены детали для органа {st.session_state.selected_organ}: {organ_details['status']}")
+                        except Exception as e:
+                            print(f"ERROR: Ошибка при получении статуса органа: {e}")
+                            # Выбрасываем исключение дальше для общей обработки
+                            raise
+                    except Exception as e:
+                        st.error(f"Ошибка при получении данных об органе: {e}")
+                        # Устанавливаем орган в None, чтобы пользователь мог выбрать другой
+                        st.session_state.selected_organ = None
+                        # Задаем пустые детали органа как запасной вариант
+                        organ_details = {
+                            'organ': st.session_state.selected_organ,
+                            'status': 'no_data',
+                            'status_label': get_text('no_data_organ'),
+                            'parameters': []
+                        }
+                    
+                    # Определяем цвет для статуса органа
+                    status_colors = {
+                        "healthy": "#E6CC33", # светло-золотой
+                        "inflamed": "#E63333", # красный
+                        "weakened": "#999999", # серый
+                        "damaged": "#333333",  # черный
+                        "no_data": "#CCCCCC"   # светло-серый
                     }
-                
-                # Определяем цвет для статуса органа
-                status_colors = {
-                    "healthy": "#E6CC33", # светло-золотой
-                    "inflamed": "#E63333", # красный
-                    "weakened": "#999999", # серый
-                    "damaged": "#333333",  # черный
-                    "no_data": "#CCCCCC"   # светло-серый
-                }
-                
-                status_color = status_colors.get(organ_details['status'], "#CCCCCC")
-                
-                # Показываем информацию об органе
-                st.subheader(get_text("organ_detail_header"))
-                
-                # Показываем орган и его статус
-                st.markdown(
-                    f"<div style='display: flex; align-items: center; margin-bottom: 15px;'>"
-                    f"<div style='background-color: {status_color}; width: 20px; height: 20px; border-radius: 50%; margin-right: 10px;'></div>"
-                    f"<span style='font-size: 1.2em;'><b>{organ_details['organ']}</b>: {organ_details['status_label']}</span>"
-                    f"</div>",
-                    unsafe_allow_html=True
-                )
-                
-                # Проверяем, есть ли детальное изображение для этого органа
-                if st.session_state.organ_detail_visualizer.has_detailed_image(organ_details['organ']):
-                    # Создаем детальное изображение органа со свечением
-                    organ_detail_fig = st.session_state.organ_detail_visualizer.create_organ_detail_view(
-                        organ_details['organ'], 
-                        organ_details['status']
+                    
+                    status_color = status_colors.get(organ_details['status'], "#CCCCCC")
+                    
+                    # Показываем информацию об органе
+                    st.subheader(get_text("organ_detail_header"))
+                    
+                    # Показываем орган и его статус
+                    st.markdown(
+                        f"<div style='display: flex; align-items: center; margin-bottom: 15px;'>"
+                        f"<div style='background-color: {status_color}; width: 20px; height: 20px; border-radius: 50%; margin-right: 10px;'></div>"
+                        f"<span style='font-size: 1.2em;'><b>{organ_details['organ']}</b>: {organ_details['status_label']}</span>"
+                        f"</div>",
+                        unsafe_allow_html=True
                     )
                     
-                    # Показываем подпись для детального изображения
-                    st.markdown(f"**{get_text('organ_detail_image')}:**")
-                    
-                    # Показываем детальное изображение
-                    st.pyplot(organ_detail_fig)
-                else:
-                    # Сообщаем, что для этого органа нет детального изображения
-                    st.info(get_text('no_detailed_image'))
-                    
-                # Показываем связанные параметры
-                if organ_details['parameters']:
-                    st.markdown(f"**{get_text('related_parameters')}:**")
-                    for param in organ_details['parameters']:
-                        status_text = get_text('normal') if param['status'] == 'normal' else get_text('abnormal')
-                        min_norm, max_norm = param['normal_range']
-                        
-                        st.markdown(
-                            f"- **{param['name']}**: {param['result']} ({min_norm} - {max_norm}), {status_text}"
+                    # Проверяем, есть ли детальное изображение для этого органа
+                    if st.session_state.organ_detail_visualizer.has_detailed_image(organ_details['organ']):
+                        # Создаем детальное изображение органа со свечением
+                        organ_detail_fig = st.session_state.organ_detail_visualizer.create_organ_detail_view(
+                            organ_details['organ'], 
+                            organ_details['status']
                         )
-                else:
-                    st.info(get_text('no_data_organ'))
-        else:
-            st.info(get_text("select_organ"))
+                        
+                        # Показываем подпись для детального изображения
+                        st.markdown(f"**{get_text('organ_detail_image')}:**")
+                        
+                        # Показываем детальное изображение
+                        st.pyplot(organ_detail_fig)
+                    else:
+                        # Сообщаем, что для этого органа нет детального изображения
+                        st.info(get_text('no_detailed_image'))
+                        
+                    # Показываем связанные параметры
+                    if organ_details['parameters']:
+                        st.markdown(f"**{get_text('related_parameters')}:**")
+                        for param in organ_details['parameters']:
+                            status_text = get_text('normal') if param['status'] == 'normal' else get_text('abnormal')
+                            min_norm, max_norm = param['normal_range']
+                            
+                            st.markdown(
+                                f"- **{param['name']}**: {param['result']} ({min_norm} - {max_norm}), {status_text}"
+                            )
+                    else:
+                        st.info(get_text('no_data_organ'))
+            else:
+                st.info(get_text("select_organ"))
+    
+    # Вызываем функцию для рендеринга визуализации органов с изолированным состоянием
+    render_organ_visualization()
 
 # GRV Scanning section
 st.header(get_text("grv_tab_header"))
@@ -862,19 +894,24 @@ with col2_doc:
 if 'grv_mode' not in st.session_state:
     st.session_state.grv_mode = False
 
-# Button to start GRV interface
-if st.button(get_text("grv_connect"), type="primary"):
-    st.session_state.grv_mode = True
-    st.rerun()
+# Функция для отображения ГРВ-интерфейса без перезагрузки страницы
+def render_grv_interface():
+    # Для полной изоляции состояния обертываем в функцию
+    display_grv_interface(st.session_state.language)
+
+# Используем чекбокс вместо кнопки с перезагрузкой для активации ГРВ-интерфейса
+grv_mode_active = st.checkbox(
+    get_text("grv_connect"), 
+    value=st.session_state.grv_mode,
+    key="grv_mode_checkbox"
+)
+
+# Обновляем состояние и отображаем интерфейс если активен
+st.session_state.grv_mode = grv_mode_active
 
 # Display GRV interface if mode is active
 if st.session_state.grv_mode:
-    display_grv_interface(st.session_state.language)
-    
-    # Button to exit GRV mode
-    if st.button(get_text("grv_disconnect"), type="secondary"):
-        st.session_state.grv_mode = False
-        st.rerun()
+    render_grv_interface()
 
 # Divider
 st.markdown("---")
