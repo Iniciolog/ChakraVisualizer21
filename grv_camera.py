@@ -724,12 +724,19 @@ def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: Finge
         bool: True если обработка успешна, иначе False
     """
     try:
+        # Получаем имя и расширение файла
+        file_name = uploaded_file.name
+        file_extension = file_name.split('.')[-1].lower()
+        
         # Чтение изображения из загруженного файла
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        
+        # Чтение изображения (cv2.imdecode должен работать с разными форматами, включая BMP)
         frame = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         
         if frame is None:
-            st.error("Не удалось прочитать изображение" if lang == 'ru' else "Failed to read image")
+            st.error(f"Не удалось прочитать изображение. Проверьте формат файла ({file_extension})." if lang == 'ru' 
+                     else f"Failed to read image. Check file format ({file_extension}).")
             return False
         
         # Сохраняем изображение в памяти
@@ -737,11 +744,19 @@ def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: Finge
         
         # Для демонстрации, сохраняем изображение на диск
         os.makedirs(grv.temp_folder, exist_ok=True)
-        filename = f"{grv.temp_folder}/grv_{hand.name.lower()}_{finger.name.lower()}.jpg"
-        cv2.imwrite(filename, frame)
         
-        # Отображаем загруженное изображение
-        st.image(frame, caption=f"Загруженное изображение" if lang == 'ru' else "Uploaded image")
+        # Сохраняем в том же формате, что был загружен
+        if file_extension == 'bmp':
+            filename = f"{grv.temp_folder}/grv_{hand.name.lower()}_{finger.name.lower()}.bmp"
+            # Для BMP используем специальный параметр для сохранения без сжатия
+            cv2.imwrite(filename, frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
+        else:
+            filename = f"{grv.temp_folder}/grv_{hand.name.lower()}_{finger.name.lower()}.jpg"
+            cv2.imwrite(filename, frame)
+        
+        # Отображаем загруженное изображение с его форматом
+        file_type = "BMP" if file_extension == 'bmp' else "JPEG/PNG"
+        st.image(frame, caption=f"Загружена ГРВ-грамма ({file_type})" if lang == 'ru' else f"Uploaded GRV-gram ({file_type})")
         
         # Обрабатываем и отображаем результаты
         results = grv.process_grv_image(frame)
@@ -754,12 +769,26 @@ def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: Finge
             st.image(results["processed_image"], 
                     caption="Обработанное изображение" if lang == 'ru' else "Processed image")
         
-        # Отображаем параметры
+        # Отображаем параметры с более подробным описанием
         if "area" in results and "intensity" in results:
-            st.write(f"Площадь: {results['area']:.2f} пикс.")
-            st.write(f"Интенсивность: {results['intensity']:.2f}")
+            st.write("### " + ("Параметры ГРВ-граммы" if lang == 'ru' else "GRV-gram Parameters"))
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Площадь свечения" if lang == 'ru' else "Glow Area", f"{results['area']:.2f} px")
+            
+            with col2:
+                st.metric("Интенсивность" if lang == 'ru' else "Intensity", f"{results['intensity']:.2f}")
+            
             if "symmetry" in results:
-                st.write(f"Симметрия: {results['symmetry']:.2f}")
+                st.metric("Симметрия" if lang == 'ru' else "Symmetry", f"{results['symmetry']:.2f}")
+        
+        # Добавляем сообщение об успешной обработке
+        st.success(
+            f"ГРВ-грамма для {finger_options[finger]} {'(левая рука)' if hand == HandType.LEFT else '(правая рука)'} успешно обработана" 
+            if lang == 'ru' else 
+            f"GRV-gram for {finger_options[finger]} {'(left hand)' if hand == HandType.LEFT else '(right hand)'} successfully processed"
+        )
         
         return True
         
@@ -833,15 +862,15 @@ def display_grv_interface(lang: str = 'ru'):
     
     # Информация и подсказка по формату загружаемых файлов
     st.markdown(
-        "Файлы ГРВ-грамм должны быть в формате JPEG или PNG. "
+        "Файлы ГРВ-грамм должны быть в формате BMP, JPEG или PNG. "
         "Рекомендуется использовать снимки, полученные с помощью программы РОК ГРВ-сканер." if lang == 'ru' else
-        "GRV-gram files should be in JPEG or PNG format. "
+        "GRV-gram files should be in BMP, JPEG or PNG format. "
         "It is recommended to use images obtained using the ROK GRV-scanner program."
     )
     
     uploaded_file = st.file_uploader(
         "Выберите файл ГРВ-граммы" if lang == 'ru' else "Choose a GRV-gram file", 
-        type=["jpg", "jpeg", "png"],
+        type=["bmp", "jpg", "jpeg", "png"],
         key=f"grv_upload_{selected_hand.name}_{selected_finger.name}"
     )
     
