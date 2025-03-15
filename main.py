@@ -9,6 +9,7 @@ from diagnostic_analyzer import DiagnosticReportAnalyzer
 from organs_visualization import OrgansVisualizer
 from organ_detail_visualization import OrganDetailVisualizer
 from aura_photo import capture_aura_photo
+from grv_camera import display_grv_interface
 
 # Initialize session state for language and view mode
 if 'language' not in st.session_state:
