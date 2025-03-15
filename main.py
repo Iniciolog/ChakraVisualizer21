@@ -559,9 +559,50 @@ with col2:
 if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
     st.markdown("---")  # Разделитель
     
-    # Временно деактивировано для устранения проблемы
-    st.warning("Функция создания фото с аурой временно отключена для технического обслуживания" if st.session_state.language == 'ru' else 
-               "Aura photo capture is temporarily disabled for maintenance")
+    # Приоритет 1: Используем данные из ГРВ камеры, если они доступны
+    if 'chakra_values_from_grv' in st.session_state:
+        st.success("Используются данные ГРВ-сканирования для создания ауры" if st.session_state.language == 'ru' else 
+                  "Using GRV scanning data to create aura")
+        
+        # Копируем значения из ГРВ для фото ауры
+        grv_energy_values = {k: float(v) for k, v in st.session_state.chakra_values_from_grv.items()}
+        st.session_state.energy_values_aura = grv_energy_values
+        
+        # Показываем значения для отладки
+        st.sidebar.markdown("### GRV Chakra Energy Values")
+        for chakra_name, energy_value in grv_energy_values.items():
+            st.sidebar.text(f"{chakra_name}: {energy_value}")
+        
+        # Используем значения чакр из ГРВ для создания фото
+        capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
+        
+    # Приоритет 2: Используем данные из отчета диагностики, если нет ГРВ данных
+    elif 'report_processed' in st.session_state and st.session_state.report_processed:
+        # Если был обработан диагностический отчет, берем актуальные значения
+        if 'report_analysis' in st.session_state and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+            st.info("Используются данные диагностического отчета для создания ауры" if st.session_state.language == 'ru' else 
+                   "Using diagnostic report data to create aura")
+            
+            # Получаем значения из отчета
+            report_energy_values = st.session_state.report_analysis['chakra_energy']
+            energy_values_float = {k: float(v) for k, v in report_energy_values.items()}
+            # Сохраняем значения из отчета для режима ауры
+            st.session_state.energy_values_aura = energy_values_float
+            
+            # Показываем значения для отладки
+            st.sidebar.markdown("### Report Chakra Energy Values")
+            for chakra_name, energy_value in energy_values_float.items():
+                st.sidebar.text(f"{chakra_name}: {energy_value}")
+            
+            # Используем сохраненные значения чакр для создания фото
+            capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
+        else:
+            # Если в отчете нет данных о чакрах
+            st.error(get_text("no_chakra_data_in_report"))
+    else:
+        # Если ни отчет, ни ГРВ данные не доступны
+        st.warning(get_text("no_report_for_aura"), icon="⚠️")
+        st.info(get_text("please_upload_report_for_aura"))
     
     # Кнопка для возврата к основному режиму
     if st.button("↩️ Вернуться к основному режиму" if st.session_state.language == 'ru' else "↩️ Return to main mode"):
@@ -571,10 +612,129 @@ if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
 # Добавляем секцию для органной визуализации, если есть данные анализа
 if st.session_state.report_processed and st.session_state.report_analysis:
     st.header(get_text("organ_visualization_tab"))
+    st.markdown(get_text("organ_visualization_info"))
     
-    # Временно деактивировано для устранения проблемы
-    st.warning("Раздел визуализации органов временно отключен для технического обслуживания" if st.session_state.language == 'ru' else 
-               "Organ visualization section is temporarily disabled for maintenance")
+    # Создаем две колонки: одна для визуализации, другая для деталей
+    # Используем другую пропорцию для лучшего отображения нового изображения 
+    organ_col1, organ_col2 = st.columns([2, 1])
+    
+    with organ_col1:
+        # Инициализируем визуализатор органов
+        if 'diagnostic_data' in st.session_state.report_analysis:
+            organ_visualizer = OrgansVisualizer(st.session_state.language)
+            diagnostic_data = st.session_state.report_analysis['diagnostic_data']
+            
+            # Создаем визуализацию органов
+            organ_fig = organ_visualizer.create_organs_visualization(diagnostic_data)
+            
+            # Сохраняем ссылку на объект визуализатора в session_state, если он еще не существует
+            if 'organ_visualizer' not in st.session_state:
+                st.session_state.organ_visualizer = organ_visualizer
+            
+            # Сохраняем орган, который будет выделен на визуализации (для подсветки при наведении)
+            if 'highlighted_organ' not in st.session_state:
+                st.session_state.highlighted_organ = None
+                
+            # Показываем визуализацию с подписями
+            st.pyplot(organ_fig)
+            
+            # Добавляем интерактивный выбор органа только через выпадающий список
+            st.markdown(f"### {get_text('select_organ')}:")
+            
+            # Добавляем интерактивные возможности (выбор органа из списка)
+            if 'selected_organ' not in st.session_state:
+                st.session_state.selected_organ = None
+                
+            # Создаем список органов для выбора
+            organ_names = list(organ_visualizer.organs_positions.keys())
+            organ_names_localized = organ_names  # В будущем можно добавить локализацию названий органов
+            
+            # Выпадающий список для выбора органа
+            # Находим индекс текущего выбранного органа, если он есть
+            default_index = 0
+            if st.session_state.selected_organ in organ_names_localized:
+                default_index = organ_names_localized.index(st.session_state.selected_organ)
+            
+            # Функция обработки изменения выбора органа
+            def on_organ_change():
+                st.session_state.selected_organ = st.session_state.organ_selector
+            
+            selected_organ = st.selectbox(
+                label=get_text("select_organ"),
+                options=organ_names_localized,
+                index=default_index,
+                key="organ_selector",
+                on_change=on_organ_change
+            )
+    
+    with organ_col2:
+        if st.session_state.selected_organ and 'organ_visualizer' in st.session_state:
+            # Получаем информацию о выбранном органе
+            if 'diagnostic_data' in st.session_state.report_analysis:
+                # Инициализируем визуализатор детальных изображений органов, если он еще не существует
+                if 'organ_detail_visualizer' not in st.session_state:
+                    st.session_state.organ_detail_visualizer = OrganDetailVisualizer(st.session_state.language)
+                
+                # Получаем информацию о выбранном органе
+                organ_details = st.session_state.organ_visualizer.get_organ_status_description(
+                    st.session_state.selected_organ, 
+                    st.session_state.report_analysis['diagnostic_data']
+                )
+                
+                # Определяем цвет для статуса органа
+                status_colors = {
+                    "healthy": "#E6CC33", # светло-золотой
+                    "inflamed": "#E63333", # красный
+                    "weakened": "#999999", # серый
+                    "damaged": "#333333",  # черный
+                    "no_data": "#CCCCCC"   # светло-серый
+                }
+                
+                status_color = status_colors.get(organ_details['status'], "#CCCCCC")
+                
+                # Показываем информацию об органе
+                st.subheader(get_text("organ_detail_header"))
+                
+                # Показываем орган и его статус
+                st.markdown(
+                    f"<div style='display: flex; align-items: center; margin-bottom: 15px;'>"
+                    f"<div style='background-color: {status_color}; width: 20px; height: 20px; border-radius: 50%; margin-right: 10px;'></div>"
+                    f"<span style='font-size: 1.2em;'><b>{organ_details['organ']}</b>: {organ_details['status_label']}</span>"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
+                
+                # Проверяем, есть ли детальное изображение для этого органа
+                if st.session_state.organ_detail_visualizer.has_detailed_image(organ_details['organ']):
+                    # Создаем детальное изображение органа со свечением
+                    organ_detail_fig = st.session_state.organ_detail_visualizer.create_organ_detail_view(
+                        organ_details['organ'], 
+                        organ_details['status']
+                    )
+                    
+                    # Показываем подпись для детального изображения
+                    st.markdown(f"**{get_text('organ_detail_image')}:**")
+                    
+                    # Показываем детальное изображение
+                    st.pyplot(organ_detail_fig)
+                else:
+                    # Сообщаем, что для этого органа нет детального изображения
+                    st.info(get_text('no_detailed_image'))
+                    
+                # Показываем связанные параметры
+                if organ_details['parameters']:
+                    st.markdown(f"**{get_text('related_parameters')}:**")
+                    for param in organ_details['parameters']:
+                        status_text = get_text('normal') if param['status'] == 'normal' else get_text('abnormal')
+                        min_norm, max_norm = param['normal_range']
+                        
+                        st.markdown(
+                            f"- **{param['name']}**: {param['result']} ({min_norm} - {max_norm}), {status_text}"
+                        )
+                else:
+                    st.info(get_text('no_data_organ'))
+        else:
+            st.info(get_text("select_organ"))
 
 # GRV Scanning section
 st.header(get_text("grv_tab_header"))
