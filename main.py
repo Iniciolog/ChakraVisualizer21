@@ -18,40 +18,75 @@ if 'language' not in st.session_state:
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = '2d'  # Default to 2D view
     
-# Initialize session state for energy values (moved here to be available for apply_results)
+# Initialize session state variables
 if 'energy_values' not in st.session_state:
     st.session_state.energy_values = {chakra['name']: 100 for chakra in chakra_data}
-    
-# Initialize session state for report analysis
+
 if 'report_processed' not in st.session_state:
     st.session_state.report_processed = False
     
 if 'report_analysis' not in st.session_state:
     st.session_state.report_analysis = None
-    
-# Проверка наличия ГРВ данных и приоритетное применение их перед другими источниками
+
+# Флаг первой загрузки для предотвращения бесконечных перезагрузок
+if 'initial_load_done' not in st.session_state:
+    st.session_state.initial_load_done = False
+
+# Отслеживаем источник данных чакр для отображения пользователю
+if 'chakra_data_source' not in st.session_state:
+    st.session_state.chakra_data_source = "default"
+
+# Определяем приоритеты источников данных и применяем их
+# Источник 1 (высший приоритет): ГРВ данные
 if 'chakra_values_from_grv' in st.session_state:
-    # Приоритет ГРВ данных над другими источниками
-    print("Применяем значения энергии чакр из ГРВ-сессии")
+    print("ПРИОРИТЕТ 1: Применяем значения энергии чакр из ГРВ-сессии")
+    st.session_state.chakra_data_source = "grv"
+    
     # Копируем значения из ГРВ-сессии в основную визуализацию
     for chakra_name, energy_value in st.session_state.chakra_values_from_grv.items():
         # Проверяем допустимость значения
         if isinstance(energy_value, (int, float)) and 0 <= energy_value <= 100:
-            st.session_state.energy_values[chakra_name] = energy_value
+            # Преобразуем в числовой формат с фиксированной точностью для стабильности
+            st.session_state.energy_values[chakra_name] = float(energy_value)
+            print(f"Установлено значение чакры {chakra_name}: {energy_value}")
         else:
             print(f"Недопустимое значение чакры {chakra_name}: {energy_value}")
+            
+# Источник 2: Анализ отчета диагностики
+elif 'report_processed' in st.session_state and st.session_state.report_processed and 'report_analysis' in st.session_state and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+    print("ПРИОРИТЕТ 2: Применяем значения энергии чакр из диагностического отчета")
+    st.session_state.chakra_data_source = "report"
     
-# Проверка и применение результатов анализа (только если нет ГРВ данных)
-elif 'apply_results' in st.session_state and st.session_state.apply_results:
-    # Берем значения энергии чакр из сохраненных результатов
-    if 'chakra_energy' in st.session_state.apply_results:
-        # Обновляем значения энергии чакр
-        for chakra_name, energy_value in st.session_state.apply_results['chakra_energy'].items():
-            # Преобразуем значение в целое число
-            st.session_state.energy_values[chakra_name] = int(energy_value)
-        
-        # Очищаем временные данные
-        st.session_state.apply_results = None
+    # Берем значения энергии чакр из диагностического отчета
+    for chakra_name, energy_value in st.session_state.report_analysis['chakra_energy'].items():
+        # Преобразуем в числовой формат для стабильности
+        try:
+            st.session_state.energy_values[chakra_name] = float(energy_value)
+            print(f"Установлено значение чакры {chakra_name}: {energy_value}")
+        except (ValueError, TypeError):
+            print(f"Ошибка преобразования значения чакры {chakra_name}: {energy_value}")
+            # Используем значение по умолчанию при ошибке
+            st.session_state.energy_values[chakra_name] = 100.0
+    
+# Источник 3: Применение временных результатов (apply_results)
+elif 'apply_results' in st.session_state and st.session_state.apply_results and 'chakra_energy' in st.session_state.apply_results:
+    print("ПРИОРИТЕТ 3: Применяем временные результаты анализа")
+    st.session_state.chakra_data_source = "temp_results"
+    
+    # Обновляем значения энергии чакр
+    for chakra_name, energy_value in st.session_state.apply_results['chakra_energy'].items():
+        try:
+            # Преобразуем значение в числовой формат
+            st.session_state.energy_values[chakra_name] = float(energy_value)
+        except (ValueError, TypeError):
+            # Используем значение по умолчанию при ошибке
+            st.session_state.energy_values[chakra_name] = 100.0
+    
+    # Очищаем временные данные
+    st.session_state.apply_results = None
+    
+# Отмечаем, что начальная загрузка данных завершена
+st.session_state.initial_load_done = True
     
 # Callback для применения результатов анализа к визуализации
 def apply_report_results():
@@ -355,12 +390,22 @@ with col1:
         if chakra['name'] not in st.session_state.energy_values:
             st.session_state.energy_values[chakra['name']] = 100
     
-    # Проверяем, есть ли данные из диагностического отчета
-    if st.session_state.report_processed and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
-        st.success(get_text("diagnostic_data_used"))
+    # Отображаем информацию об источнике данных
+    if st.session_state.chakra_data_source == "grv":
+        st.success("Используются данные ГРВ-сканирования для визуализации" if st.session_state.language == 'ru' else 
+                   "Using GRV scanning data for visualization", icon="📊")
+        # Добавляем информацию о времени последнего сканирования, если доступно
+        if 'grv_session_timestamp' in st.session_state:
+            timestamp = st.session_state.grv_session_timestamp
+            st.info(f"Данные ГРВ от: {timestamp}" if st.session_state.language == 'ru' else f"GRV data from: {timestamp}")
+    elif st.session_state.chakra_data_source == "report":
+        st.success(get_text("diagnostic_data_used"), icon="📋")
         st.markdown(get_text("chakra_values_auto_calculated"))
+    elif st.session_state.chakra_data_source == "temp_results":
+        st.info("Используются временные результаты анализа" if st.session_state.language == 'ru' else
+                "Using temporary analysis results", icon="🔄")
     else:
-        # Если нет данных отчета, показываем информационное сообщение
+        # Нет данных отчета или ГРВ, показываем информационное сообщение
         st.warning(get_text("no_diagnostic_data"), icon="⚠️")
         st.markdown(get_text("please_upload_report"))
     
@@ -398,32 +443,54 @@ with col2:
         fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
         st.plotly_chart(fig_3d, use_container_width=True, height=700)
         
-    # Добавляем кнопку для создания фото с аурой только если есть данные отчета
-    if st.session_state.report_processed and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+    # Добавляем кнопку для создания фото с аурой, если есть данные ГРВ или отчета
+    if 'chakra_values_from_grv' in st.session_state or (st.session_state.report_processed and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis):
         if st.button("📸 Сделать фото ауры" if st.session_state.language == 'ru' else "📸 Take Aura Photo"):
             # Переключаем на режим фотографии
-            if 'aura_photo_mode' not in st.session_state:
-                st.session_state.aura_photo_mode = True
-            else:
-                st.session_state.aura_photo_mode = True
+            st.session_state.aura_photo_mode = True
             st.rerun()
     else:
-        # Если нет данных отчета, показываем сообщение вместо кнопки
+        # Если нет данных отчета или ГРВ, показываем сообщение вместо кнопки
         st.warning(get_text("no_report_for_aura"), icon="⚠️")
         
 # Если включен режим фотографии с аурой, показываем интерфейс для фото
 if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
     st.markdown("---")  # Разделитель
     
-    # Проверка на наличие энергетических значений чакр из анализа
-    if 'report_processed' in st.session_state and st.session_state.report_processed:
+    # Приоритет 1: Используем данные из ГРВ камеры, если они доступны
+    if 'chakra_values_from_grv' in st.session_state:
+        st.success("Используются данные ГРВ-сканирования для создания ауры" if st.session_state.language == 'ru' else 
+                  "Using GRV scanning data to create aura")
+        
+        # Копируем значения из ГРВ для фото ауры
+        grv_energy_values = {k: float(v) for k, v in st.session_state.chakra_values_from_grv.items()}
+        st.session_state.energy_values_aura = grv_energy_values
+        
+        # Показываем значения для отладки
+        st.sidebar.markdown("### GRV Chakra Energy Values")
+        for chakra_name, energy_value in grv_energy_values.items():
+            st.sidebar.text(f"{chakra_name}: {energy_value}")
+        
+        # Используем значения чакр из ГРВ для создания фото
+        capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
+        
+    # Приоритет 2: Используем данные из отчета диагностики, если нет ГРВ данных
+    elif 'report_processed' in st.session_state and st.session_state.report_processed:
         # Если был обработан диагностический отчет, берем актуальные значения
         if 'report_analysis' in st.session_state and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+            st.info("Используются данные диагностического отчета для создания ауры" if st.session_state.language == 'ru' else 
+                   "Using diagnostic report data to create aura")
+            
             # Получаем значения из отчета
             report_energy_values = st.session_state.report_analysis['chakra_energy']
             energy_values_float = {k: float(v) for k, v in report_energy_values.items()}
             # Сохраняем значения из отчета для режима ауры
             st.session_state.energy_values_aura = energy_values_float
+            
+            # Показываем значения для отладки
+            st.sidebar.markdown("### Report Chakra Energy Values")
+            for chakra_name, energy_value in energy_values_float.items():
+                st.sidebar.text(f"{chakra_name}: {energy_value}")
             
             # Используем сохраненные значения чакр для создания фото
             capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
@@ -431,7 +498,7 @@ if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
             # Если в отчете нет данных о чакрах
             st.error(get_text("no_chakra_data_in_report"))
     else:
-        # Если отчет не загружен, показываем сообщение
+        # Если ни отчет, ни ГРВ данные не доступны
         st.warning(get_text("no_report_for_aura"), icon="⚠️")
         st.info(get_text("please_upload_report_for_aura"))
     
