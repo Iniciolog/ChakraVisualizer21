@@ -436,15 +436,22 @@ if st.session_state.report_processed and st.session_state.report_analysis:
             organ_names_localized = organ_names  # В будущем можно добавить локализацию названий органов
             
             # Выпадающий список для выбора органа
+            # Находим индекс текущего выбранного органа, если он есть
+            default_index = 0
+            if st.session_state.selected_organ in organ_names_localized:
+                default_index = organ_names_localized.index(st.session_state.selected_organ)
+            
+            # Функция обработки изменения выбора органа
+            def on_organ_change():
+                st.session_state.selected_organ = st.session_state.organ_selector
+            
             selected_organ = st.selectbox(
                 label=get_text("select_organ"),
                 options=organ_names_localized,
-                index=0,
-                key="organ_selector"
+                index=default_index,
+                key="organ_selector",
+                on_change=on_organ_change
             )
-            
-            # Обновляем выбранный орган в session_state
-            st.session_state.selected_organ = selected_organ
     
     with organ_col2:
         if st.session_state.selected_organ and 'organ_visualizer' in st.session_state:
