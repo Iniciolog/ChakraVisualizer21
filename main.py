@@ -18,6 +18,10 @@ if 'language' not in st.session_state:
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = '2d'  # Default to 2D view
     
+# Для тестирования добавляем режим визуализации энергетического профиля
+if 'energy_profile' not in st.session_state:
+    st.session_state.energy_profile = 'custom'  # Default: custom profile
+    
 # Initialize session state variables
 # Инициализируем значения энергии для чакр при первой загрузке
 if 'energy_values' not in st.session_state:
