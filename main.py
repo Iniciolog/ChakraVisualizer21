@@ -547,10 +547,19 @@ with col2:
         
     # Добавляем кнопку для создания фото с аурой, если есть данные ГРВ или отчета
     if 'chakra_values_from_grv' in st.session_state or (st.session_state.report_processed and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis):
-        if st.button("📸 Сделать фото ауры" if st.session_state.language == 'ru' else "📸 Take Aura Photo"):
-            # Переключаем на режим фотографии
-            st.session_state.aura_photo_mode = True
-            st.rerun()
+        # Вместо полного перезапуска страницы используем переменную состояния
+        if 'aura_photo_mode' not in st.session_state:
+            st.session_state.aura_photo_mode = False
+            
+        # Используем чекбокс вместо кнопки, чтобы избежать перезагрузки
+        aura_mode = st.checkbox(
+            "📸 Режим фото ауры" if st.session_state.language == 'ru' else "📸 Aura Photo Mode",
+            value=st.session_state.aura_photo_mode,
+            key="aura_mode_checkbox"
+        )
+        
+        # Обновляем состояние без перезагрузки
+        st.session_state.aura_photo_mode = aura_mode
     else:
         # Если нет данных отчета или ГРВ, показываем сообщение вместо кнопки
         st.warning(get_text("no_report_for_aura"), icon="⚠️")
@@ -630,10 +639,9 @@ if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
         st.warning(get_text("no_report_for_aura"), icon="⚠️")
         st.info(get_text("please_upload_report_for_aura"))
     
-    # Кнопка для возврата к основному режиму
-    if st.button("↩️ Вернуться к основному режиму" if st.session_state.language == 'ru' else "↩️ Return to main mode"):
-        st.session_state.aura_photo_mode = False
-        st.rerun()
+    # Кнопка для возврата к основному режиму - заменена на текст, т.к. режим управляется чекбоксом
+    st.info("↩️ Для выхода из режима фото ауры снимите отметку с чекбокса выше" if st.session_state.language == 'ru' else 
+           "↩️ To exit aura photo mode, uncheck the checkbox above")
 
 # Добавляем секцию для органной визуализации, если есть данные анализа
 if st.session_state.report_processed and st.session_state.report_analysis:

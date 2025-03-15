@@ -397,8 +397,8 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                                 if 'chakra_values_from_grv' in st.session_state:
                                     st.session_state.chakra_values_from_grv_backup = st.session_state.chakra_values_from_grv.copy()
                                     
-                                # Перезапускаем с сохраненными данными
-                                st.rerun()
+                                # НЕ используем st.rerun() чтобы избежать сброса состояния
+                                # Просто обновляем нужные переменные состояния для обновления интерфейса
                         else:
                             st.error("Не удалось получить изображение с камеры")
                     else:
@@ -418,8 +418,7 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                 st.session_state.camera_active = False
                 st.session_state.upload_active = False
                 st.session_state.result_image = None
-                # Используем rerun для обновления интерфейса и возврата к выбору опций
-                st.rerun()
+                # НЕ используем rerun - только обновляем переменные состояния
             
             # Кнопка "Скачать фото" во второй колонке
             if st.session_state.result_image is not None:
