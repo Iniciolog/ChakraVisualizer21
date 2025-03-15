@@ -709,7 +709,7 @@ class GRVCamera:
             return False
 
 
-def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: FingerType, lang: str = 'ru'):
+def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: FingerType, lang: str = 'ru', finger_options=None):
     """
     Обработка загруженного ГРВ-изображения
     
@@ -719,11 +719,22 @@ def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: Finge
         hand (HandType): Тип руки (левая/правая)
         finger (FingerType): Тип пальца
         lang (str): Язык интерфейса ('ru' или 'en')
+        finger_options (dict, optional): Словарь с названиями пальцев
         
     Returns:
         bool: True если обработка успешна, иначе False
     """
     try:
+        # Создаем локальный словарь названий пальцев, если не передан
+        if finger_options is None:
+            finger_options = {
+                FingerType.THUMB: "Большой" if lang == 'ru' else "Thumb",
+                FingerType.INDEX: "Указательный" if lang == 'ru' else "Index",
+                FingerType.MIDDLE: "Средний" if lang == 'ru' else "Middle",
+                FingerType.RING: "Безымянный" if lang == 'ru' else "Ring",
+                FingerType.PINKY: "Мизинец" if lang == 'ru' else "Pinky"
+            }
+        
         # Получаем имя и расширение файла
         file_name = uploaded_file.name
         file_extension = file_name.split('.')[-1].lower()
@@ -783,11 +794,15 @@ def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: Finge
             if "symmetry" in results:
                 st.metric("Симметрия" if lang == 'ru' else "Symmetry", f"{results['symmetry']:.2f}")
         
+        # Определяем название руки для сообщения
+        hand_name = "левая рука" if hand == HandType.LEFT else "правая рука"
+        hand_name_en = "left hand" if hand == HandType.LEFT else "right hand"
+        
         # Добавляем сообщение об успешной обработке
         st.success(
-            f"ГРВ-грамма для {finger_options[finger]} {'(левая рука)' if hand == HandType.LEFT else '(правая рука)'} успешно обработана" 
+            f"ГРВ-грамма для {finger_options[finger]} ({hand_name}) успешно обработана" 
             if lang == 'ru' else 
-            f"GRV-gram for {finger_options[finger]} {'(left hand)' if hand == HandType.LEFT else '(right hand)'} successfully processed"
+            f"GRV-gram for {finger_options[finger]} ({hand_name_en}) successfully processed"
         )
         
         return True
@@ -876,7 +891,7 @@ def display_grv_interface(lang: str = 'ru'):
     
     if uploaded_file is not None:
         # Обработка загруженного изображения
-        process_uploaded_grv_image(grv, uploaded_file, selected_hand, selected_finger, lang)
+        process_uploaded_grv_image(grv, uploaded_file, selected_hand, selected_finger, lang, finger_options)
     
     # Панель состояния - показываем, какие пальцы уже отсканированы
     st.subheader("Статус загрузки ГРВ-грамм" if lang == 'ru' else "GRV-gram Upload Status")
