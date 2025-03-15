@@ -90,8 +90,8 @@ def add_chakras_3d(fig, energy_values, language='en'):
         color = utils.calculate_chakra_color(base_color, energy)
         color_str = f'rgb({color[0]}, {color[1]}, {color[2]})'
         
-        # Size depends on energy
-        size = 0.2 + (0.15 * energy)
+        # Size depends on energy (более значительное изменение размера)
+        size = 0.15 + (0.4 * energy)
         
         # Create hover text with chakra information
         hover_text = f"{name_display} ({sanskrit_name_display})<br>{location_display}<br>Energy: {energy_values[name]}%"
@@ -142,14 +142,19 @@ def add_biofield_3d(fig, energy_values):
     # Create multiple layers of the aura
     layers = 5
     for i in range(layers):
-        # Scale based on the layer
-        scale = 1 - (i / layers) * 0.7
-        opacity = 0.15 * scale * avg_energy_pct
+        # Scale based on the layer (улучшенная версия)
+        scale = 1 - (i / layers) * 0.6  # Меньшее уменьшение для внешних слоев
         
-        # Base dimensions
-        x_scale = 1.0 * (1 + i*0.3) * (0.7 + avg_energy_pct * 0.5)
-        y_scale = 1.0 * (1 + i*0.3) * (0.7 + avg_energy_pct * 0.5)
-        z_scale = 3.5 * (1 + i*0.2) * (0.7 + avg_energy_pct * 0.5)
+        # Делаем ауру более яркой для лучшей видимости даже при низких значениях
+        base_opacity = 0.25  # Базовая непрозрачность (была 0.15)
+        opacity = base_opacity * scale * (0.4 + avg_energy_pct * 0.6)  # От 40% до 100% базовой непрозрачности
+        
+        # Base dimensions (улучшенные размеры)
+        # Более заметная разница между высокой и низкой энергией
+        energy_factor = 0.4 + (avg_energy_pct * 0.6)  # От 0.4 до 1.0 вместо от 0.7 до 1.2
+        x_scale = 1.0 * (1 + i*0.35) * energy_factor  # Увеличен шаг между слоями
+        y_scale = 1.0 * (1 + i*0.35) * energy_factor
+        z_scale = 3.5 * (1 + i*0.25) * energy_factor
         
         # Calculate the blended color for this layer
         blended_color = calculate_layer_color(energy_values, i, layers)

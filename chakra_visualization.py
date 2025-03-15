@@ -85,8 +85,8 @@ def draw_chakras(ax, energy_values, language='en'):
         # Calculate color based on energy level
         color = utils.calculate_chakra_color(base_color, energy)
         
-        # Size depends on energy
-        size = 0.3 + (0.2 * energy)
+        # Size depends on energy (более значительное изменение размера)
+        size = 0.2 + (0.5 * energy)
         
         # Add chakra circle
         circle = Circle(position, size, color=tuple(c/255 for c in color), 
@@ -124,10 +124,15 @@ def draw_biofield(ax, energy_values):
         # Calculate the scale for this layer
         scale = 1 - (i / layers)
         
-        # Scale the size and alpha based on energy
-        layer_width = aura_width * (0.6 + (avg_energy_pct * 0.4)) * (1 + i*0.15)
-        layer_height = aura_height * (0.6 + (avg_energy_pct * 0.4)) * (1 + i*0.15)
-        alpha = 0.15 * scale * avg_energy_pct
+        # Scale the size and alpha based on energy (улучшенная версия)
+        # Если средняя энергия низкая, аура будет заметно меньше
+        energy_factor = 0.4 + (avg_energy_pct * 0.6)  # От 0.4 до 1.0 вместо от 0.6 до 1.0
+        layer_width = aura_width * energy_factor * (1 + i*0.2)  # Увеличен шаг между слоями
+        layer_height = aura_height * energy_factor * (1 + i*0.2)
+        
+        # Делаем ауру более яркой для лучшей видимости даже при низких значениях
+        base_alpha = 0.3  # Базовая непрозрачность (была 0.15)
+        alpha = base_alpha * scale * (0.5 + avg_energy_pct * 0.5)  # От 50% до 100% базовой непрозрачности
         
         # Blend colors from each chakra based on energy
         blended_color = [0, 0, 0]

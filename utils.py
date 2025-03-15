@@ -12,34 +12,41 @@ def calculate_chakra_color(base_color, energy):
     # Ensure energy is between 0 and 1
     energy = max(0, min(1, energy))
     
-    # If energy is above 50%, the color is vibrant
-    if energy >= 0.5:
-        # Scale from 50% to 100% (0.5 to 1.0) to maintain vibrancy
-        intensity = (energy - 0.5) * 2  # Rescale from 0.5-1.0 to 0-1.0
-        
-        # Adjust brightness based on energy level
+    # ПОЛНОСТЬЮ ПЕРЕРАБОТАН АЛГОРИТМ для более контрастной визуализации
+    
+    # Если энергия >= 80%, усиливаем яркость (более светлые и насыщенные тона)
+    if energy >= 0.8:
+        # Усиливаем яркость на 20-40%
+        brightness_boost = 1.2 + (energy - 0.8) * 2  # От 1.2 до 1.6
         adjusted_color = [
-            base_color[0],
-            base_color[1],
-            base_color[2]
+            min(255, int(base_color[0] * brightness_boost)),
+            min(255, int(base_color[1] * brightness_boost)),
+            min(255, int(base_color[2] * brightness_boost))
         ]
+        return adjusted_color
         
+    # Если энергия от 30% до 80%, оставляем базовый цвет с линейной градацией яркости
+    elif energy >= 0.3:
+        # Линейная градация от 60% до 100% яркости
+        brightness = 0.6 + (energy - 0.3) * 0.8  # От 0.6 до 1.0
+        adjusted_color = [
+            int(base_color[0] * brightness),
+            int(base_color[1] * brightness),
+            int(base_color[2] * brightness)
+        ]
         return adjusted_color
     
-    # If energy is below 50%, blend with gray/black
+    # Если энергия < 30%, смешиваем с серым/черным (существенное затемнение)
     else:
-        # Scale from 0% to 50% (0.0 to 0.5) to determine gray level
-        gray_level = energy * 2  # Rescale from 0-0.5 to 0-1.0
+        # При 0% - почти черный (10% от базового цвета)
+        # При 30% - 60% от базового цвета
+        gray_level = 0.1 + (energy / 0.3) * 0.5  # От 0.1 до 0.6
         
-        # Calculate the blend between the base color and black
-        # At 0% energy, the color is completely black
-        # At 50% energy, the color is 100% of the base color
         adjusted_color = [
             int(base_color[0] * gray_level),
             int(base_color[1] * gray_level),
             int(base_color[2] * gray_level)
         ]
-        
         return adjusted_color
 
 def interpolate_colors(color1, color2, ratio):
