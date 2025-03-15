@@ -671,7 +671,8 @@ st.header(get_text("organ_visualization_tab"))
 
 # Проверяем, есть ли данные для отображения
 if 'report_processed' not in st.session_state or not st.session_state.report_processed or 'report_analysis' not in st.session_state:
-    st.warning(get_text("no_report_data"))
+    st.warning("Нет данных отчёта для отображения органов" if st.session_state.language == 'ru' else 
+               "No report data for organ visualization")
 else:
     # Переместим логику в функцию, чтобы изолировать состояние
     def render_organ_visualization():
