@@ -13,10 +13,10 @@ class OrganDetailVisualizer:
     
     # Пути к изображениям органов
     organ_images = {
-        "Сердце": "assets/images/organs/heart.jpg",
-        "Кишечник": "assets/images/organs/intestine.jpeg",
-        "Печень": "assets/images/organs/liver.webp",
-        "Желудок": "assets/images/organs/stomach.png"
+        "Сердце": "assets/images/organs/liver.webp",     # на самом деле изображение сердца
+        "Кишечник": "assets/images/organs/heart.jpg",    # на самом деле изображение кишечника
+        "Печень": "assets/images/organs/stomach.png",    # на самом деле изображение печени
+        "Желудок": "assets/images/organs/intestine.jpeg" # на самом деле изображение желудка
     }
     
     # Свечения для разных статусов
