@@ -21,8 +21,8 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
     # Создаем пустое изображение с прозрачностью
     aura = np.zeros((height, width, 4), dtype=np.uint8)
     
-    # Центр изображения (для ауры)
-    center_x, center_y = width // 2, height // 2
+    # Центр изображения (для ауры) - смещаем немного вниз, чтобы учесть положение головы
+    center_x, center_y = width // 2, int(height * 0.45)
     
     # Базовые цвета чакр (RGB)
     chakra_colors = {
@@ -38,98 +38,138 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
     # Преобразуем все значения энергии в float для безопасного вычисления
     energy_values_float = {k: float(v) for k, v in energy_values.items()}
     
-    # Вычисляем средний уровень энергии всех чакр для определения размера ауры
-    avg_energy = sum(energy_values_float.values()) / len(energy_values_float)
+    # Определяем вертикальные позиции чакр (относительные координаты по оси Y)
+    # Значения соответствуют положению чакр в теле человека от низа (0) до верха (1)
+    chakra_positions = {
+        "Root": 0.15,         # Муладхара - самая нижняя
+        "Sacral": 0.25,       # Свадхистана - ниже пупка
+        "Solar Plexus": 0.35, # Манипура - солнечное сплетение
+        "Heart": 0.50,        # Анахата - область сердца
+        "Throat": 0.65,       # Вишудха - горловой центр
+        "Third Eye": 0.80,    # Аджна - третий глаз, между бровями
+        "Crown": 0.95         # Сахасрара - верхушка головы
+    }
     
-    # Рассчитываем размер ауры - используем большое значение для охвата всего изображения
-    max_radius = int(min(width, height) * 0.6)
+    # Рассчитываем радиус ауры для каждой чакры на основании её энергии
+    # Чем выше энергия чакры, тем дальше будет распространяться её аура
+    chakra_radius = {}
+    base_radius = min(width, height) * 0.5  # Базовый радиус ауры
     
-    # Создаем несколько слоев ауры с разной плотностью
-    num_layers = 25
+    for chakra, energy in energy_values_float.items():
+        # Вычисляем радиус ауры от 30% до 100% от базового радиуса
+        chakra_radius[chakra] = base_radius * (0.3 + 0.7 * energy / 100.0)
     
     # Проходим по всем пикселям изображения
     for y in range(height):
         for x in range(width):
-            # Рассчитываем расстояние от центра (используем овальную форму)
-            # Увеличиваем вертикальное растяжение для создания более эллиптической ауры
-            dx = x - center_x
-            dy = (y - center_y) * 0.9  # Вертикальное растяжение
-            dist = np.sqrt(dx*dx + dy*dy)
+            # Преобразуем координаты в относительные (0-1) для сравнения с позициями чакр
+            rel_y = y / height
             
-            # Если пиксель находится внутри максимального радиуса ауры
-            if dist <= max_radius:
-                # Определяем слой ауры на основе расстояния
-                layer = int((dist / max_radius) * num_layers)
+            # Используем форму гуманоидной ауры - более широкая в плечах, сужается к голове и ногам
+            # Вычисляем базовую ширину силуэта на разной высоте
+            if rel_y < 0.2:  # Ноги
+                body_width = 0.15
+            elif rel_y < 0.4:  # Нижняя часть туловища
+                body_width = 0.2 + (rel_y - 0.2) * 0.5
+            elif rel_y < 0.6:  # Верхняя часть туловища (плечи)
+                body_width = 0.3
+            elif rel_y < 0.8:  # Шея
+                body_width = 0.3 - (rel_y - 0.6) * 1.0
+            else:  # Голова
+                body_width = 0.15
+            
+            # Рассчитываем горизонтальное расстояние от центра
+            dx = (x - center_x) / width
+            
+            # Рассчитываем расстояние до тела (силуэта человека)
+            body_dist = abs(dx) - body_width
+            if body_dist < 0:
+                body_dist = 0  # Внутри силуэта
+            
+            # Преобразуем в абсолютное расстояние
+            body_dist = body_dist * width
+            
+            # Для каждой чакры рассчитываем влияние в зависимости от её позиции и энергии
+            chakra_weights = {}
+            total_distance_weight = 0
+            
+            # Определяем ближайшую чакру по вертикали и её влияние
+            for chakra, pos_y in chakra_positions.items():
+                # Преобразуем позицию чакры в абсолютные координаты
+                chakra_y = int(pos_y * height)
                 
-                # Вычисляем угол для определения влияния каждой чакры
-                angle = np.arctan2(dy, dx)
-                angle_deg = (np.degrees(angle) + 360) % 360
+                # Вычисляем расстояние по вертикали до чакры
+                vert_distance = abs(y - chakra_y)
                 
-                # Используем более плавную модель влияния чакр в зависимости от угла,
-                # чтобы создать более мягкие переходы между цветами
-                
-                # Определяем центры влияния каждой чакры (в градусах)
-                chakra_centers = {
-                    "Root": 270,        # внизу
-                    "Sacral": 315,      # внизу-справа
-                    "Solar Plexus": 0,  # справа
-                    "Heart": 45,        # справа-вверху
-                    "Throat": 90,       # вверху
-                    "Third Eye": 135,   # вверху-слева
-                    "Crown": 180        # слева
-                }
-                
-                # Вычисляем влияние каждой чакры на основе близости угла к центру чакры
-                # Максимальное влияние будет 0..1, чем ближе угол к центру чакры, тем больше влияние
-                chakra_weights = {}
-                max_angular_distance = 90  # максимальное угловое расстояние, после которого влияние = 0
-                
-                for chakra, center in chakra_centers.items():
-                    # Вычисляем кратчайшее угловое расстояние между углом и центром чакры (0-180)
-                    angular_distance = min(abs(angle_deg - center), 360 - abs(angle_deg - center))
+                # Вертикальное влияние убывает с расстоянием
+                # Используем гауссово распределение для плавного убывания
+                max_vert_dist = height * 0.3  # Максимальное расстояние влияния по вертикали
+                if vert_distance < max_vert_dist:
+                    # Нормализуем расстояние
+                    norm_dist = vert_distance / max_vert_dist
+                    # Гауссова функция убывания влияния с расстоянием
+                    vert_weight = np.exp(-5 * norm_dist * norm_dist)
                     
-                    # Применяем плавную косинусную интерполяцию для влияния
-                    if angular_distance < max_angular_distance:
-                        # Косинусная интерполяция: 1 в центре, плавно убывает к 0
-                        weight = np.cos(angular_distance * np.pi / max_angular_distance) * 0.5 + 0.5
-                        chakra_weights[chakra] = weight * energy_values_float[chakra] / 100.0
-                    else:
-                        chakra_weights[chakra] = 0
-                
-                # Отбираем чакры с ненулевым влиянием
-                chakra_influence = [chakra for chakra, weight in chakra_weights.items() if weight > 0]
-                
-                # Если ни одна чакра не имеет влияния, берем ближайшую
-                if not chakra_influence:
-                    closest_chakra = min(chakra_centers.items(), 
-                                        key=lambda x: min(abs(angle_deg - x[1]), 360 - abs(angle_deg - x[1])))[0]
-                    chakra_influence = [closest_chakra]
-                
-                # Вычисляем цвет на основе влияния чакр с учетом весов из косинусной интерполяции
-                color = [0, 0, 0]
-                weight_sum = 0.0
-                
-                # Используем веса, рассчитанные на основе углового расстояния
-                for chakra in chakra_influence:
-                    weight = chakra_weights[chakra] if chakra in chakra_weights else 0
-                    weight_sum += weight
-                    color[0] += chakra_colors[chakra][0] * weight
-                    color[1] += chakra_colors[chakra][1] * weight
-                    color[2] += chakra_colors[chakra][2] * weight
-                
-                if weight_sum > 0:
-                    color = [int(c / weight_sum) for c in color]
+                    # Учитываем энергию чакры
+                    energy_factor = energy_values_float[chakra] / 100.0
+                    
+                    # Проверяем, что точка находится в пределах горизонтального распространения ауры чакры
+                    # Чем больше энергия чакры, тем дальше распространяется её аура от тела
+                    max_dist_for_chakra = chakra_radius[chakra]
+                    
+                    if body_dist <= max_dist_for_chakra:
+                        # Рассчитываем горизонтальный вес в зависимости от удаления от тела
+                        # и энергии чакры
+                        horiz_weight = 1.0 - (body_dist / max_dist_for_chakra)
+                        
+                        # Общий вес этой чакры для данной точки
+                        chakra_weight = vert_weight * horiz_weight * energy_factor
+                        
+                        if chakra_weight > 0.01:  # Минимальный порог влияния
+                            chakra_weights[chakra] = chakra_weight
+                            total_distance_weight += chakra_weight
+            
+            # Нормализуем веса, чтобы сумма всех весов была 1
+            if total_distance_weight > 0:
+                for chakra in chakra_weights:
+                    chakra_weights[chakra] /= total_distance_weight
+            
+            # Отбираем чакры с ненулевым влиянием
+            chakra_influence = list(chakra_weights.keys())
+            
+            # Вычисляем цвет на основе влияния чакр
+            color = [0, 0, 0]
+            weight_sum = 0.0
+            
+            # Используем веса, рассчитанные по позиции и энергии чакр
+            for chakra in chakra_influence:
+                weight = chakra_weights[chakra] if chakra in chakra_weights else 0
+                weight_sum += weight
+                color[0] += chakra_colors[chakra][0] * weight
+                color[1] += chakra_colors[chakra][1] * weight
+                color[2] += chakra_colors[chakra][2] * weight
+            
+            if weight_sum > 0:
+                color = [int(c / weight_sum) for c in color]
+            else:
+                # Если нет весов, используем средний цвет всех чакр
+                color = [128, 128, 128]  # серый
+            
+            # Альфа-канал определяет прозрачность (уменьшается к краю ауры)
+            # Чем дальше от силуэта, тем прозрачнее
+            if body_dist <= 0:
+                alpha = int(255 * 0.7)  # Максимальная непрозрачность 70%
+            else:
+                # Находим максимальный радиус для всех активных чакр
+                max_chakra_radius = max([chakra_radius[c] for c in chakra_influence]) if chakra_influence else base_radius
+                alpha_factor = 1.0 - (body_dist / max_chakra_radius)
+                if alpha_factor < 0:
+                    alpha = 0
                 else:
-                    # Если нет весов, используем средний цвет всех чакр
-                    color = [128, 128, 128]  # серый
-                
-                # Альфа-канал определяет прозрачность (уменьшается к краю ауры)
-                # Вычисляем плавную прозрачность на основе расстояния от центра
-                alpha_factor = 1.0 - (dist / max_radius)
-                alpha = int(255 * alpha_factor * 0.7)  # Максимальная прозрачность 70%
-                
-                # Устанавливаем цвет пикселя
-                aura[y, x] = [color[0], color[1], color[2], alpha]
+                    alpha = int(255 * alpha_factor * 0.7)
+            
+            # Устанавливаем цвет пикселя
+            aura[y, x] = [color[0], color[1], color[2], alpha]
     
     return aura
 
