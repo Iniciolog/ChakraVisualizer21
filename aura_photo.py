@@ -35,61 +35,70 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
         "Crown": [128, 0, 128]        # фиолетовый
     }
     
+    # Преобразуем все значения энергии в float для безопасного вычисления
+    energy_values_float = {k: float(v) for k, v in energy_values.items()}
+    
     # Вычисляем средний уровень энергии всех чакр для определения размера ауры
-    avg_energy = sum(energy_values.values()) / len(energy_values)
-    max_radius = int(min(width, height) * 0.45 * (0.5 + avg_energy / 200))
+    avg_energy = sum(energy_values_float.values()) / len(energy_values_float)
     
-    # Создаем несколько слоев ауры
-    num_layers = 15
+    # Рассчитываем размер ауры - используем большое значение для охвата всего изображения
+    max_radius = int(min(width, height) * 0.6)
     
-    for layer in range(num_layers):
-        radius = max_radius * (1 - layer / num_layers)
-        
-        # Для каждого пикселя в круге
-        for y in range(height):
-            for x in range(width):
-                # Рассчитываем расстояние от центра
-                dist = np.sqrt((x - center_x)**2 + ((y - center_y) * 1.2)**2)  # Вытягиваем по вертикали
+    # Создаем несколько слоев ауры с разной плотностью
+    num_layers = 25
+    
+    # Проходим по всем пикселям изображения
+    for y in range(height):
+        for x in range(width):
+            # Рассчитываем расстояние от центра (используем овальную форму)
+            # Увеличиваем вертикальное растяжение для создания более эллиптической ауры
+            dx = x - center_x
+            dy = (y - center_y) * 0.9  # Вертикальное растяжение
+            dist = np.sqrt(dx*dx + dy*dy)
+            
+            # Если пиксель находится внутри максимального радиуса ауры
+            if dist <= max_radius:
+                # Определяем слой ауры на основе расстояния
+                layer = int((dist / max_radius) * num_layers)
                 
-                # Если пиксель находится на текущем слое ауры
-                if abs(dist - radius) < max_radius / num_layers:
-                    # Вычисляем угол для определения влияния каждой чакры
-                    angle = np.arctan2((y - center_y), (x - center_x))
-                    angle_deg = (np.degrees(angle) + 360) % 360
-                    
-                    # Вычисляем, какая чакра оказывает наибольшее влияние на данный угол
-                    # Смещаем углы, чтобы нижние чакры были внизу, а верхние вверху
-                    chakra_influence = ["Root", "Sacral"]  # По умолчанию
-                    
-                    if 225 <= angle_deg <= 315:  # Нижняя часть ауры
-                        chakra_influence = ["Root", "Sacral"]
-                    elif (315 < angle_deg <= 360) or (0 <= angle_deg < 45):  # Правая часть
-                        chakra_influence = ["Sacral", "Solar Plexus", "Heart"]
-                    elif 45 <= angle_deg < 135:  # Верхняя часть ауры
-                        chakra_influence = ["Throat", "Third Eye", "Crown"]
-                    elif 135 <= angle_deg < 225:  # Левая часть
-                        chakra_influence = ["Heart", "Solar Plexus", "Sacral"]
-                    
-                    # Вычисляем цвет на основе влияния чакр
-                    color = [0, 0, 0]
-                    weight_sum = 0.0
-                    
-                    for chakra in chakra_influence:
-                        weight = float(energy_values[chakra]) / 100.0
-                        weight_sum += weight
-                        color[0] += chakra_colors[chakra][0] * weight
-                        color[1] += chakra_colors[chakra][1] * weight
-                        color[2] += chakra_colors[chakra][2] * weight
-                    
-                    if weight_sum > 0:
-                        color = [int(c / weight_sum) for c in color]
-                        
-                    # Альфа-канал определяет прозрачность (уменьшается к краю ауры)
-                    alpha = int(255 * (1 - (layer / num_layers) * 0.8))
-                    
-                    # Устанавливаем цвет пикселя
-                    if dist <= max_radius:
-                        aura[y, x] = [color[0], color[1], color[2], alpha]
+                # Вычисляем угол для определения влияния каждой чакры
+                angle = np.arctan2(dy, dx)
+                angle_deg = (np.degrees(angle) + 360) % 360
+                
+                # Вычисляем, какая чакра оказывает наибольшее влияние на данный угол
+                # Смещаем углы, чтобы нижние чакры были внизу, а верхние вверху
+                chakra_influence = ["Root", "Sacral"]  # По умолчанию
+                
+                if 225 <= angle_deg <= 315:  # Нижняя часть ауры 
+                    chakra_influence = ["Root", "Sacral"]
+                elif (315 < angle_deg <= 360) or (0 <= angle_deg < 45):  # Правая часть
+                    chakra_influence = ["Sacral", "Solar Plexus", "Heart"]
+                elif 45 <= angle_deg < 135:  # Верхняя часть ауры
+                    chakra_influence = ["Throat", "Third Eye", "Crown"]
+                elif 135 <= angle_deg < 225:  # Левая часть
+                    chakra_influence = ["Heart", "Solar Plexus", "Sacral"]
+                
+                # Вычисляем цвет на основе влияния чакр
+                color = [0, 0, 0]
+                weight_sum = 0.0
+                
+                for chakra in chakra_influence:
+                    weight = energy_values_float[chakra] / 100.0
+                    weight_sum += weight
+                    color[0] += chakra_colors[chakra][0] * weight
+                    color[1] += chakra_colors[chakra][1] * weight
+                    color[2] += chakra_colors[chakra][2] * weight
+                
+                if weight_sum > 0:
+                    color = [int(c / weight_sum) for c in color]
+                
+                # Альфа-канал определяет прозрачность (уменьшается к краю ауры)
+                # Вычисляем плавную прозрачность на основе расстояния от центра
+                alpha_factor = 1.0 - (dist / max_radius)
+                alpha = int(255 * alpha_factor * 0.7)  # Максимальная прозрачность 70%
+                
+                # Устанавливаем цвет пикселя
+                aura[y, x] = [color[0], color[1], color[2], alpha]
     
     return aura
 
@@ -159,7 +168,7 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
             if cols[0].button(t['capture'], key='take_photo'):
                 try:
                     # Используем streamlit-webrtc для захвата кадра с камеры
-                    img_file_buffer = camera_container.camera_input(label="", key="camera")
+                    img_file_buffer = camera_container.camera_input(label="Camera capture", key="camera_capture")
                     
                     if img_file_buffer is not None:
                         # Преобразуем изображение
@@ -206,7 +215,7 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
     
     # Показываем камеру или результат
     if st.session_state.camera_active:
-        camera_container.camera_input(label="", key="camera")
+        camera_container.camera_input(label="Live camera", key="camera_live")
     
     elif st.session_state.photo_taken and st.session_state.result_image is not None:
         result_container.image(
