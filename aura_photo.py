@@ -66,9 +66,9 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
     # Используем 40% от минимального измерения, обеспечивая отступ от края
     base_radius = min(width, height) * 0.4  # Уменьшенный базовый радиус ауры
     
-    # Определяем расстояние от центра до края с запасом
-    edge_distance_x = min(center_x, width - center_x) * 0.95
-    edge_distance_y = min(center_y, height - center_y) * 0.95
+    # Определяем расстояние от центра до края с запасом 10%
+    edge_distance_x = min(center_x, width - center_x) * 0.9
+    edge_distance_y = min(center_y, height - center_y) * 0.9
     
     # Выбираем наименьшее расстояние для ограничения радиуса
     max_allowed_radius = min(edge_distance_x, edge_distance_y, base_radius)
