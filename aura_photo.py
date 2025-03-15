@@ -283,62 +283,66 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                     st.error(traceback.format_exc())
         
         elif st.session_state.photo_taken:
-            # Кнопка "Сделать новое фото" без использования st.rerun(),
-            # чтобы избежать перезагрузки всего приложения
-            retry_button = cols[0].button(t['retry'], key='new_photo')
+            # Создаем две колонки для кнопок
+            col1, col2 = st.columns(2)
+            
+            # Кнопка "Сделать новое фото" в первой колонке
+            retry_button = col1.button(t['retry'], key='new_photo')
             if retry_button:
                 # Очищаем текущее фото и активируем камеру
                 st.session_state.photo_taken = False
                 st.session_state.camera_active = True
                 st.session_state.result_image = None
+                # Используем rerun для обновления интерфейса
+                st.experimental_rerun()
             
+            # Кнопка "Скачать фото" во второй колонке
             if st.session_state.result_image is not None:
-                # Конвертируем изображение для скачивания
-                try:
-                    # Уменьшаем размер изображения перед скачиванием, если оно слишком большое
-                    result_img = st.session_state.result_image
-                    max_dimension = 1200  # Максимальный размер изображения для скачивания
-                    
-                    height, width = result_img.shape[:2]
-                    if width > max_dimension or height > max_dimension:
-                        # Вычисляем новый размер с сохранением соотношения сторон
-                        if width > height:
-                            new_width = max_dimension
-                            new_height = int(height * (max_dimension / width))
-                        else:
-                            new_height = max_dimension
-                            new_width = int(width * (max_dimension / height))
+                # Показываем кнопку скачивания отдельно, чтобы избежать проблем
+                download_button = col2.button(t['download'], key='download_button')
+                if download_button:
+                    try:
+                        # Весь код для подготовки изображения к скачиванию
+                        result_img = st.session_state.result_image
+                        max_dimension = 1200
                         
-                        # Уменьшаем изображение
-                        result_img = cv2.resize(result_img, (new_width, new_height))
-                    
-                    # Преобразуем в PIL Image
-                    result_pil = Image.fromarray(result_img)
-                    
-                    # JPEG не поддерживает альфа-канал, поэтому нужно конвертировать из RGBA в RGB
-                    if result_pil.mode == 'RGBA':
-                        # Создаем белый фон
-                        background = Image.new('RGB', result_pil.size, (255, 255, 255))
-                        # Накладываем изображение с альфа-каналом на белый фон
-                        background.paste(result_pil, mask=result_pil.split()[3])  # 3 - индекс альфа-канала
-                        # Используем новое изображение без альфа-канала
-                        result_pil = background
-                    
-                    buf = io.BytesIO()
-                    # Теперь у нас RGB, которое можно сохранить как JPEG
-                    result_pil.save(buf, format="JPEG", quality=85)
-                    
-                    cols[1].download_button(
-                        label=t['download'],
-                        data=buf.getvalue(),
-                        file_name="aura_photo.jpg",
-                        mime="image/jpeg",
-                        key='download_photo'
-                    )
-                except Exception as e:
-                    import traceback
-                    st.error(f"Ошибка при подготовке изображения для скачивания: {str(e)}")
-                    st.error(traceback.format_exc())
+                        height, width = result_img.shape[:2]
+                        if width > max_dimension or height > max_dimension:
+                            if width > height:
+                                new_width = max_dimension
+                                new_height = int(height * (max_dimension / width))
+                            else:
+                                new_height = max_dimension
+                                new_width = int(width * (max_dimension / height))
+                            
+                            result_img = cv2.resize(result_img, (new_width, new_height))
+                        
+                        # Преобразуем в PIL Image
+                        result_pil = Image.fromarray(result_img)
+                        
+                        # JPEG не поддерживает альфа-канал
+                        if result_pil.mode == 'RGBA':
+                            background = Image.new('RGB', result_pil.size, (255, 255, 255))
+                            background.paste(result_pil, mask=result_pil.split()[3])
+                            result_pil = background
+                        
+                        # Сохраняем во временный файл
+                        temp_file = "temp_aura_photo.jpg"
+                        result_pil.save(temp_file, format="JPEG", quality=85)
+                        
+                        # Открываем файл и предлагаем для скачивания
+                        with open(temp_file, "rb") as file:
+                            col2.download_button(
+                                label="Скачать сейчас",
+                                data=file,
+                                file_name="aura_photo.jpg",
+                                mime="image/jpeg",
+                                key='actual_download'
+                            )
+                    except Exception as e:
+                        import traceback
+                        st.error(f"Ошибка при подготовке изображения для скачивания: {str(e)}")
+                        st.error(traceback.format_exc())
     
     # Показываем камеру или результат
     if st.session_state.camera_active:
