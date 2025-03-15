@@ -292,7 +292,7 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                 st.session_state.camera_active = True
                 st.session_state.result_image = None
                 # Используем rerun для обновления интерфейса
-                st.experimental_rerun()
+                st.rerun()
             
             # Кнопка "Скачать фото" во второй колонке
             if st.session_state.result_image is not None:
