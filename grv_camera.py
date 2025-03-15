@@ -1061,7 +1061,7 @@ def display_grv_interface(lang: str = 'ru'):
     col1, col2, col3 = st.columns(3)
     
     # Кнопка для отображения полной визуализации, доступна если данные уже есть в session_state
-    if "chakra_values_from_grv" in st.session_state and col3.button("Показать полную визуализацию" if lang == 'ru' else "Show full visualization"):
+    if "chakra_values_from_grv" in st.session_state and col3.button("Показать полную визуализацию" if lang == 'ru' else "Show full visualization", key="button_show_full_viz_main"):
         # Импортируем модули для визуализации
         from chakra_visualization import create_chakra_visualization
         from chakra_visualization_3d import create_chakra_visualization_3d
@@ -1090,7 +1090,7 @@ def display_grv_interface(lang: str = 'ru'):
             "You can take a photo from the camera and overlay an aura corresponding to your energy state."
         )
         
-        if st.button("Сделать фото с аурой" if lang == 'ru' else "Take aura photo"):
+        if st.button("Сделать фото с аурой" if lang == 'ru' else "Take aura photo", key="button_aura_photo_analysis"):
             # Создаем фото с аурой
             capture_aura_photo(energy_values, lang)
             
@@ -1240,7 +1240,7 @@ def display_grv_interface(lang: str = 'ru'):
                              "Data processed and ready for use in the main application.")
                     
                     # Добавляем кнопку для создания и отображения полной визуализации
-                    if st.button("Показать полную визуализацию" if lang == 'ru' else "Show Full Visualization"):
+                    if st.button("Показать полную визуализацию" if lang == 'ru' else "Show Full Visualization", key="button_show_full_viz_analysis"):
                         # Показываем визуализацию ауры
                         st.subheader("Визуализация ауры" if lang == 'ru' else "Aura Visualization")
                         
@@ -1446,7 +1446,7 @@ def display_grv_interface(lang: str = 'ru'):
                     )
                     
                     # Добавляем кнопку для отображения полной визуализации
-                    if st.button("Показать полную визуализацию" if lang == 'ru' else "Show full visualization"):
+                    if st.button("Показать полную визуализацию" if lang == 'ru' else "Show full visualization", key="button_show_full_viz_load"):
                         # Импортируем модули для визуализации
                         from chakra_visualization import create_chakra_visualization
                         from chakra_visualization_3d import create_chakra_visualization_3d
@@ -1470,7 +1470,7 @@ def display_grv_interface(lang: str = 'ru'):
                             "You can take a photo from the camera and overlay an aura corresponding to your energy state."
                         )
                         
-                        if st.button("Сделать фото с аурой" if lang == 'ru' else "Take aura photo"):
+                        if st.button("Сделать фото с аурой" if lang == 'ru' else "Take aura photo", key="button_aura_photo_main"):
                             # Создаем фото с аурой
                             capture_aura_photo(energy_values, lang)
                             
@@ -1548,7 +1548,7 @@ def display_grv_interface(lang: str = 'ru'):
                         
                         # Отображаем информацию
                         if organ_status_info:
-                            st.markdown(f"**Статус:** {organ_status_info['status_description']}")
+                            st.markdown(f"**Статус:** {organ_status_info['status_label']}")
                             st.markdown(f"**Параметры:**")
                             
                             for param in organ_status_info['parameters']:
