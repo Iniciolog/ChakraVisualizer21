@@ -38,8 +38,8 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
         "Crown": [128, 0, 128]        # фиолетовый
     }
     
-    # Коэффициент увеличения яркости (10%)
-    brightness_boost = 1.1
+    # Коэффициент увеличения яркости (25%)
+    brightness_boost = 1.25
     
     # Преобразуем все значения энергии в float для безопасного вычисления
     energy_values_float = {k: float(v) for k, v in energy_values.items()}
@@ -172,7 +172,7 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
             if weight_sum > 0:
                 # Сначала нормализуем цвет
                 color = [int(c / weight_sum) for c in color]
-                # Затем увеличиваем яркость на 10%
+                # Затем увеличиваем яркость на 25%
                 color = [min(255, int(c * brightness_boost)) for c in color]
             else:
                 # Если нет весов, точка остается прозрачной
