@@ -29,8 +29,20 @@ if 'report_processed' not in st.session_state:
 if 'report_analysis' not in st.session_state:
     st.session_state.report_analysis = None
     
-# Проверка и применение результатов анализа
-if 'apply_results' in st.session_state and st.session_state.apply_results:
+# Проверка наличия ГРВ данных и приоритетное применение их перед другими источниками
+if 'chakra_values_from_grv' in st.session_state:
+    # Приоритет ГРВ данных над другими источниками
+    print("Применяем значения энергии чакр из ГРВ-сессии")
+    # Копируем значения из ГРВ-сессии в основную визуализацию
+    for chakra_name, energy_value in st.session_state.chakra_values_from_grv.items():
+        # Проверяем допустимость значения
+        if isinstance(energy_value, (int, float)) and 0 <= energy_value <= 100:
+            st.session_state.energy_values[chakra_name] = energy_value
+        else:
+            print(f"Недопустимое значение чакры {chakra_name}: {energy_value}")
+    
+# Проверка и применение результатов анализа (только если нет ГРВ данных)
+elif 'apply_results' in st.session_state and st.session_state.apply_results:
     # Берем значения энергии чакр из сохраненных результатов
     if 'chakra_energy' in st.session_state.apply_results:
         # Обновляем значения энергии чакр
