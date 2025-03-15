@@ -305,11 +305,20 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                         # Уменьшаем изображение
                         result_img = cv2.resize(result_img, (new_width, new_height))
                     
-                    # Преобразуем в PIL Image и сохраняем в буфер
+                    # Преобразуем в PIL Image
                     result_pil = Image.fromarray(result_img)
-                    buf = io.BytesIO()
                     
-                    # Используем JPEG вместо PNG для уменьшения размера
+                    # JPEG не поддерживает альфа-канал, поэтому нужно конвертировать из RGBA в RGB
+                    if result_pil.mode == 'RGBA':
+                        # Создаем белый фон
+                        background = Image.new('RGB', result_pil.size, (255, 255, 255))
+                        # Накладываем изображение с альфа-каналом на белый фон
+                        background.paste(result_pil, mask=result_pil.split()[3])  # 3 - индекс альфа-канала
+                        # Используем новое изображение без альфа-канала
+                        result_pil = background
+                    
+                    buf = io.BytesIO()
+                    # Теперь у нас RGB, которое можно сохранить как JPEG
                     result_pil.save(buf, format="JPEG", quality=85)
                     
                     cols[1].download_button(
