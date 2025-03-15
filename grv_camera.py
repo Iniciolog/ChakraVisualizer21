@@ -667,23 +667,43 @@ class GRVCamera:
         Returns:
             bool: True, если сохранение успешно, иначе False
         """
-        # В реальной реализации здесь будет сохранение данных в формат, 
-        # совместимый с ГРВ-ТБК 3.3
-        
-        # Имитация для демонстрации
         try:
             # Создаем словарь с данными сессии
+            # Преобразуем словарь обработанных данных в сериализуемый формат
+            processed_data_serializable = {}
+            for hand, fingers in self.processed_data.items():
+                hand_key = hand.name
+                processed_data_serializable[hand_key] = {}
+                for finger, data in fingers.items():
+                    finger_key = finger.name
+                    # Исключаем изображения (большой размер)
+                    data_copy = data.copy()
+                    if 'processed_image' in data_copy:
+                        del data_copy['processed_image']
+                    processed_data_serializable[hand_key][finger_key] = data_copy
+            
+            # Получаем модель энергии
+            energy_model = self.calculate_energy_model()
+            
+            # Итоговые данные для сохранения
             session_data = {
-                "processed_data": self.processed_data,
-                "energy_model": self.calculate_energy_model()
+                "processed_data_serializable": processed_data_serializable,
+                "chakra_values": energy_model.get("chakra_values", {}),
+                "balance_index": energy_model.get("balance_index", 0)
             }
             
-            # Имитация сохранения (в реальности будет сохранение в файл)
+            # Сохраняем данные в формате JSON
+            import json
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(session_data, f, ensure_ascii=False, indent=4)
+            
             print(f"Данные сессии сохранены в файл: {filename}")
             return True
             
         except Exception as e:
+            import traceback
             print(f"Ошибка при сохранении сессии: {e}")
+            print(traceback.format_exc())
             return False
     
     def load_session(self, filename: str) -> bool:
@@ -696,17 +716,42 @@ class GRVCamera:
         Returns:
             bool: True, если загрузка успешна, иначе False
         """
-        # В реальной реализации здесь будет загрузка данных из формата, 
-        # совместимого с ГРВ-ТБК 3.3
-        
-        # Имитация для демонстрации
         try:
-            # Имитация загрузки (в реальности будет чтение из файла)
+            # Загружаем данные из JSON файла
+            import json
+            with open(filename, 'r', encoding='utf-8') as f:
+                session_data = json.load(f)
+            
+            # Восстанавливаем обработанные данные в правильном формате
+            if "processed_data_serializable" in session_data:
+                # Сбрасываем текущие данные
+                self.processed_data = {
+                    HandType.LEFT: {ft: {} for ft in FingerType},
+                    HandType.RIGHT: {ft: {} for ft in FingerType}
+                }
+                
+                # Загружаем данные из файла
+                for hand_key, fingers in session_data["processed_data_serializable"].items():
+                    hand = HandType[hand_key] if hand_key in [h.name for h in HandType] else None
+                    if hand:
+                        for finger_key, data in fingers.items():
+                            finger = FingerType[finger_key] if finger_key in [f.name for f in FingerType] else None
+                            if finger:
+                                # Восстанавливаем данные для пальца
+                                self.processed_data[hand][finger] = data
+            
+            # Сохраняем загруженные данные в session_state для дальнейшего использования
+            if "chakra_values" in session_data:
+                import streamlit as st
+                st.session_state.chakra_values_from_grv = session_data["chakra_values"]
+            
             print(f"Данные сессии загружены из файла: {filename}")
             return True
             
         except Exception as e:
+            import traceback
             print(f"Ошибка при загрузке сессии: {e}")
+            print(traceback.format_exc())
             return False
 
 
@@ -1058,14 +1103,84 @@ def display_grv_interface(lang: str = 'ru'):
                             mime="application/pdf"
                         )
     
-    # Кнопки сохранения и загрузки сессии
-    if col2.button("Сохранить сессию" if lang == 'ru' else "Save session"):
-        if grv.save_session("grv_session.dat"):
-            st.success("Сессия успешно сохранена" if lang == 'ru' else "Session saved successfully")
+    # Блок для сохранения и загрузки сессии
+    st.subheader("Сохранение и загрузка сессии" if lang == 'ru' else "Save and Load Session")
     
-    if col3.button("Загрузить сессию" if lang == 'ru' else "Load session"):
-        if grv.load_session("grv_session.dat"):
-            st.success("Сессия успешно загружена" if lang == 'ru' else "Session loaded successfully")
+    # Информационное сообщение
+    st.info(
+        "Сессия сохраняется в файл, который вы можете скачать и загрузить позже, чтобы не повторять загрузку ГРВ-грамм." if lang == 'ru' else
+        "The session is saved to a file that you can download and upload later to avoid repeating the upload of GRV-grams."
+    )
+    
+    save_col1, save_col2 = st.columns(2)
+    
+    # Поле для ввода имени файла для сохранения
+    with save_col1:
+        save_filename = st.text_input(
+            "Имя файла для сохранения" if lang == 'ru' else "Filename for saving", 
+            value="grv_session.json"
+        )
+        
+        # Кнопка сохранения
+        if st.button("Сохранить сессию" if lang == 'ru' else "Save session"):
+            if grv.save_session(save_filename):
+                # Подготавливаем ссылку на скачивание файла
+                import base64
+                import os
+                if os.path.exists(save_filename):
+                    with open(save_filename, "rb") as file:
+                        file_content = file.read()
+                        b64_content = base64.b64encode(file_content).decode()
+                        
+                        download_href = f'<a href="data:application/octet-stream;base64,{b64_content}" download="{save_filename}">Скачать файл сессии</a>'
+                        st.markdown(download_href, unsafe_allow_html=True)
+                        
+                        st.success(
+                            f"Сессия успешно сохранена в файл {save_filename}. Нажмите на ссылку выше для скачивания." if lang == 'ru' else 
+                            f"Session successfully saved to file {save_filename}. Click the link above to download."
+                        )
+                else:
+                    st.error(
+                        f"Файл {save_filename} не найден после сохранения" if lang == 'ru' else 
+                        f"File {save_filename} not found after saving"
+                    )
+    
+    # Блок для загрузки сессии
+    with save_col2:
+        # Файловый загрузчик для выбора файла сессии
+        uploaded_session = st.file_uploader(
+            "Выберите файл сессии для загрузки" if lang == 'ru' else "Choose a session file to load",
+            type=["json", "dat"],
+            key="session_uploader"
+        )
+        
+        if uploaded_session is not None:
+            # Сохраняем загруженный файл во временный файл
+            import os
+            import tempfile
+            
+            # Создаем временный файл для сохранения загруженного файла
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+            temp_file.write(uploaded_session.getvalue())
+            temp_file.close()
+            
+            # Загружаем сессию из временного файла
+            if grv.load_session(temp_file.name):
+                st.success(
+                    f"Сессия успешно загружена из файла {uploaded_session.name}" if lang == 'ru' else 
+                    f"Session successfully loaded from file {uploaded_session.name}"
+                )
+                
+                # Обновляем интерфейс для отображения загруженных данных
+                st.experimental_rerun()
+            else:
+                st.error(
+                    "Ошибка при загрузке сессии" if lang == 'ru' else 
+                    "Error loading session"
+                )
+            
+            # Удаляем временный файл
+            os.unlink(temp_file.name)
 
 
 # Пример использования, если скрипт запущен напрямую
