@@ -21,8 +21,9 @@ def create_chakra_visualization(energy_values, language='en'):
     for name, value in energy_values.items():
         print(f"  {name}: {value}")
     
-    # Create the figure and axis
+    # Create the figure and axis with black background
     fig, ax = plt.subplots(figsize=(10, 15), facecolor='black')
+    ax.set_facecolor('black')  # Ensure the axis background is also black
     
     # Draw the human silhouette
     draw_silhouette(ax)
