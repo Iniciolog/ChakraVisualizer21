@@ -19,6 +19,7 @@ if 'view_mode' not in st.session_state:
     st.session_state.view_mode = '2d'  # Default to 2D view
     
 # Initialize session state variables
+# Инициализируем значения энергии для чакр при первой загрузке
 if 'energy_values' not in st.session_state:
     st.session_state.energy_values = {chakra['name']: 100 for chakra in chakra_data}
 
@@ -37,52 +38,73 @@ if 'chakra_data_source' not in st.session_state:
     st.session_state.chakra_data_source = "default"
 
 # Определяем приоритеты источников данных и применяем их
+# ВАЖНО: Эта логика должна выполняться ПОСЛЕ инициализации st.session_state.energy_values,
+# но ДО использования energy_values для визуализации
+
+# Флаг для отслеживания, были ли применены значения из других источников
+values_applied = False
+
 # Источник 1 (высший приоритет): ГРВ данные
 if 'chakra_values_from_grv' in st.session_state:
+    values_applied = True
     print("ПРИОРИТЕТ 1: Применяем значения энергии чакр из ГРВ-сессии")
     st.session_state.chakra_data_source = "grv"
     
-    # Копируем значения из ГРВ-сессии в основную визуализацию
+    # Полностью заменяем словарь energy_values на значения из ГРВ
+    grv_values = {}
     for chakra_name, energy_value in st.session_state.chakra_values_from_grv.items():
-        # Проверяем допустимость значения
         if isinstance(energy_value, (int, float)) and 0 <= energy_value <= 100:
-            # Преобразуем в числовой формат с фиксированной точностью для стабильности
-            st.session_state.energy_values[chakra_name] = float(energy_value)
+            grv_values[chakra_name] = float(energy_value)
             print(f"Установлено значение чакры {chakra_name}: {energy_value}")
         else:
-            print(f"Недопустимое значение чакры {chakra_name}: {energy_value}")
+            grv_values[chakra_name] = 100.0  # Значение по умолчанию
+            print(f"Недопустимое значение чакры {chakra_name}: {energy_value}, установлено по умолчанию 100.0")
+    
+    # После создания полного словаря заменяем им текущие значения
+    if grv_values:
+        st.session_state.energy_values.update(grv_values)
             
-# Источник 2: Анализ отчета диагностики
-elif 'report_processed' in st.session_state and st.session_state.report_processed and 'report_analysis' in st.session_state and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+# Источник 2: Анализ отчета диагностики (только если не применены значения из ГРВ)
+elif not values_applied and 'report_processed' in st.session_state and st.session_state.report_processed and 'report_analysis' in st.session_state and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+    values_applied = True
     print("ПРИОРИТЕТ 2: Применяем значения энергии чакр из диагностического отчета")
     st.session_state.chakra_data_source = "report"
     
-    # Берем значения энергии чакр из диагностического отчета
+    # Создаем новый словарь для значений из отчета
+    report_values = {}
     for chakra_name, energy_value in st.session_state.report_analysis['chakra_energy'].items():
-        # Преобразуем в числовой формат для стабильности
         try:
-            st.session_state.energy_values[chakra_name] = float(energy_value)
+            report_values[chakra_name] = float(energy_value)
             print(f"Установлено значение чакры {chakra_name}: {energy_value}")
         except (ValueError, TypeError):
-            print(f"Ошибка преобразования значения чакры {chakra_name}: {energy_value}")
-            # Используем значение по умолчанию при ошибке
-            st.session_state.energy_values[chakra_name] = 100.0
+            report_values[chakra_name] = 100.0  # Значение по умолчанию
+            print(f"Ошибка преобразования значения чакры {chakra_name}: {energy_value}, установлено по умолчанию 100.0")
     
-# Источник 3: Применение временных результатов (apply_results)
-elif 'apply_results' in st.session_state and st.session_state.apply_results and 'chakra_energy' in st.session_state.apply_results:
+    # После создания полного словаря заменяем им текущие значения
+    if report_values:
+        st.session_state.energy_values.update(report_values)
+    
+# Источник 3: Применение временных результатов (apply_results) (только если не применены значения из ГРВ или отчета)
+elif not values_applied and 'apply_results' in st.session_state and st.session_state.apply_results and 'chakra_energy' in st.session_state.apply_results:
+    values_applied = True
     print("ПРИОРИТЕТ 3: Применяем временные результаты анализа")
     st.session_state.chakra_data_source = "temp_results"
     
-    # Обновляем значения энергии чакр
+    # Создаем новый словарь для временных значений
+    temp_values = {}
     for chakra_name, energy_value in st.session_state.apply_results['chakra_energy'].items():
         try:
-            # Преобразуем значение в числовой формат
-            st.session_state.energy_values[chakra_name] = float(energy_value)
+            temp_values[chakra_name] = float(energy_value)
+            print(f"Установлено временное значение чакры {chakra_name}: {energy_value}")
         except (ValueError, TypeError):
-            # Используем значение по умолчанию при ошибке
-            st.session_state.energy_values[chakra_name] = 100.0
+            temp_values[chakra_name] = 100.0  # Значение по умолчанию
+            print(f"Ошибка временного значения чакры {chakra_name}: {energy_value}, установлено по умолчанию 100.0")
     
-    # Очищаем временные данные
+    # После создания полного словаря заменяем им текущие значения
+    if temp_values:
+        st.session_state.energy_values.update(temp_values)
+    
+    # Очищаем временные данные после использования
     st.session_state.apply_results = None
     
 # Отмечаем, что начальная загрузка данных завершена
