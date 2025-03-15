@@ -28,14 +28,15 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
     center_x, center_y = width // 2, int(height * 0.45)
     
     # Базовые цвета чакр (RGB)
+    # Усиливаем яркость и насыщенность цветов
     chakra_colors = {
-        "Root": [255, 0, 0],          # красный
-        "Sacral": [255, 128, 0],      # оранжевый
-        "Solar Plexus": [255, 255, 0], # желтый
-        "Heart": [0, 255, 0],         # зеленый
-        "Throat": [0, 191, 255],      # голубой
-        "Third Eye": [0, 0, 255],     # синий
-        "Crown": [128, 0, 128]        # фиолетовый
+        "Root": [255, 30, 30],         # более яркий красный
+        "Sacral": [255, 150, 0],       # более яркий оранжевый
+        "Solar Plexus": [255, 255, 30], # более яркий желтый
+        "Heart": [30, 255, 30],        # более яркий зеленый
+        "Throat": [30, 200, 255],      # более яркий голубой
+        "Third Eye": [50, 50, 255],    # более яркий синий
+        "Crown": [180, 30, 180]        # более яркий фиолетовый
     }
     
     # Преобразуем все значения энергии в float для безопасного вычисления
@@ -58,7 +59,8 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
     # Рассчитываем радиус ауры для каждой чакры на основании её энергии
     # Чем выше энергия чакры, тем дальше будет распространяться её аура
     chakra_radius = {}
-    base_radius = min(width, height) * 0.5  # Базовый радиус ауры
+    # Уменьшаем базовый радиус ауры, чтобы она не выходила за пределы фото
+    base_radius = min(width, height) * 0.3  # Уменьшили с 0.5 до 0.3
     
     for chakra, energy in energy_values_float.items():
         # Вычисляем радиус ауры от 30% до 100% от базового радиуса
@@ -127,7 +129,12 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
                         
                         # Общий вес этой чакры с учетом угла и расстояния
                         # Чакра больше влияет горизонтально, но также распространяется вертикально
+                        # Усиливаем вес для более яркого проявления
                         chakra_weight = (angle_weight * 0.7 + horiz_weight * 0.3) * energy_factor
+                        
+                        # Применяем нелинейное усиление весов для более ярких цветов
+                        # Веса близкие к 1 становятся еще ближе к 1, а малые веса увеличиваются медленнее
+                        chakra_weight = pow(chakra_weight, 0.7)  # Степень < 1 усиливает значения
                         
                         if chakra_weight > 0.01:  # Минимальный порог влияния
                             chakra_weights[chakra] = chakra_weight
@@ -162,15 +169,17 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
             # Альфа-канал определяет прозрачность (уменьшается к краю ауры)
             # Чем дальше от силуэта, тем прозрачнее
             if body_dist <= 0:
-                alpha = int(255 * 0.7)  # Максимальная непрозрачность 70%
+                alpha = int(255 * 0.9)  # Увеличиваем непрозрачность до 90% для силуэта
             else:
                 # Находим максимальный радиус для всех активных чакр
                 max_chakra_radius = max([chakra_radius[c] for c in chakra_influence]) if chakra_influence else base_radius
-                alpha_factor = 1.0 - (body_dist / max_chakra_radius)
+                # Изменяем кривую затухания, чтобы аура дольше оставалась яркой
+                alpha_factor = 1.0 - pow(body_dist / max_chakra_radius, 0.7)  # Нелинейное затухание
                 if alpha_factor < 0:
                     alpha = 0
                 else:
-                    alpha = int(255 * alpha_factor * 0.7)
+                    # Увеличиваем общую непрозрачность ауры с 0.7 до 0.85
+                    alpha = int(255 * alpha_factor * 0.85)
             
             # Устанавливаем цвет пикселя
             aura[y, x] = [color[0], color[1], color[2], alpha]
