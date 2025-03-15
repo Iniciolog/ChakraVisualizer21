@@ -110,6 +110,8 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
         energy_values (dict): Словарь с названиями чакр и их энергетическими уровнями (0-100)
         language (str): Язык интерфейса
     """
+    # Отладочная информация
+    print(f"Входные значения энергии: {energy_values}")
     texts = {
         'ru': {
             'title': 'Сделать фото с аурой',
@@ -167,31 +169,42 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
         elif st.session_state.camera_active and not st.session_state.photo_taken:
             if cols[0].button(t['capture'], key='take_photo'):
                 try:
-                    # Используем streamlit-webrtc для захвата кадра с камеры
-                    img_file_buffer = camera_container.camera_input(label="Camera capture", key="camera_capture")
-                    
-                    if img_file_buffer is not None:
-                        # Преобразуем изображение
-                        image = Image.open(img_file_buffer)
-                        img_array = np.array(image)
+                    # Получаем изображение из camera_input, которое было показано в camera_container
+                    if "camera_live" in st.session_state and st.session_state["camera_live"] is not None:
+                        # Извлекаем изображение из сессии
+                        img_file_buffer = st.session_state["camera_live"]
                         
-                        # Генерируем изображение ауры
-                        with st.spinner(t['processing']):
-                            # Создаем ауру
-                            aura_img = create_aura_only(energy_values, 
-                                                        width=img_array.shape[1], 
-                                                        height=img_array.shape[0])
+                        if img_file_buffer is not None:
+                            # Преобразуем изображение
+                            print("Обрабатываем изображение из камеры")
+                            image = Image.open(img_file_buffer)
+                            img_array = np.array(image)
                             
-                            # Накладываем ауру на фото
-                            result_img = overlay_aura_on_photo(img_array, aura_img)
+                            print(f"Размер изображения: {img_array.shape}")
                             
-                            # Сохраняем результат
-                            st.session_state.result_image = result_img
-                            st.session_state.photo_taken = True
-                            st.session_state.camera_active = False
-                            st.rerun()
+                            # Генерируем изображение ауры
+                            with st.spinner(t['processing']):
+                                # Создаем ауру
+                                aura_img = create_aura_only(energy_values, 
+                                                            width=img_array.shape[1], 
+                                                            height=img_array.shape[0])
+                                
+                                # Накладываем ауру на фото
+                                result_img = overlay_aura_on_photo(img_array, aura_img)
+                                
+                                # Сохраняем результат
+                                st.session_state.result_image = result_img
+                                st.session_state.photo_taken = True
+                                st.session_state.camera_active = False
+                                st.rerun()
+                        else:
+                            st.error("Не удалось получить изображение с камеры")
+                    else:
+                        st.warning("Пожалуйста, сначала сделайте снимок с камеры")
                 except Exception as e:
+                    import traceback
                     st.error(f"Ошибка: {str(e)}")
+                    st.error(traceback.format_exc())
         
         elif st.session_state.photo_taken:
             if cols[0].button(t['retry'], key='new_photo'):
@@ -235,24 +248,43 @@ def overlay_aura_on_photo(photo: np.ndarray, aura: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: Итоговое изображение
     """
-    # Проверяем совпадение размеров
-    if photo.shape[0] != aura.shape[0] or photo.shape[1] != aura.shape[1]:
-        # Изменяем размер ауры, чтобы она соответствовала фото
-        aura = cv2.resize(aura, (photo.shape[1], photo.shape[0]))
+    try:
+        # Выводим отладочную информацию
+        print(f"Размеры фото: {photo.shape}, размеры ауры: {aura.shape}")
+        
+        # Проверяем совпадение размеров
+        if photo.shape[0] != aura.shape[0] or photo.shape[1] != aura.shape[1]:
+            # Изменяем размер ауры, чтобы она соответствовала фото
+            aura = cv2.resize(aura, (photo.shape[1], photo.shape[0]))
+            print(f"Изменили размер ауры на: {aura.shape}")
+        
+        # Если у фото нет альфа-канала, добавляем его
+        if photo.shape[2] == 3:
+            print("Фото без альфа-канала, добавляем")
+            photo_rgba = cv2.cvtColor(photo, cv2.COLOR_RGB2RGBA)
+        else:
+            photo_rgba = photo.copy()
+        
+        # Создаем копию для результата
+        result = photo_rgba.copy()
+        
+        # Быстрый метод наложения без циклов
+        for c in range(3):  # Для каждого цветового канала (RGB)
+            # Формула смешивания: result = (1-alpha)*background + alpha*foreground
+            alpha_channel = aura[:, :, 3] / 255.0  # Нормализуем альфа-канал от 0 до 1
+            
+            # Расширяем форму для поэлементных операций
+            alpha_3d = alpha_channel[:, :, np.newaxis]
+            
+            # Применяем альфа-смешивание
+            result[:, :, c] = (1 - alpha_3d[:, :, 0]) * photo_rgba[:, :, c] + alpha_3d[:, :, 0] * aura[:, :, c]
+        
+        # Преобразуем результат в целые числа
+        result = result.astype(np.uint8)
+        
+        return result
     
-    # Если у фото нет альфа-канала, добавляем его
-    if photo.shape[2] == 3:
-        photo_rgba = cv2.cvtColor(photo, cv2.COLOR_RGB2RGBA)
-    else:
-        photo_rgba = photo.copy()
-    
-    # Накладываем ауру с учетом прозрачности
-    for y in range(photo_rgba.shape[0]):
-        for x in range(photo_rgba.shape[1]):
-            if aura[y, x, 3] > 0:  # Если пиксель ауры не полностью прозрачный
-                alpha = aura[y, x, 3] / 255.0
-                photo_rgba[y, x, 0] = int((1 - alpha) * photo_rgba[y, x, 0] + alpha * aura[y, x, 0])
-                photo_rgba[y, x, 1] = int((1 - alpha) * photo_rgba[y, x, 1] + alpha * aura[y, x, 1])
-                photo_rgba[y, x, 2] = int((1 - alpha) * photo_rgba[y, x, 2] + alpha * aura[y, x, 2])
-    
-    return photo_rgba
+    except Exception as e:
+        # Логируем ошибку и возвращаем исходное изображение
+        print(f"Ошибка при наложении ауры: {str(e)}")
+        return photo

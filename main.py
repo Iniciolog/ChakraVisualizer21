@@ -410,7 +410,9 @@ if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
     st.markdown("---")  # Разделитель
     
     # Вызываем функцию для создания фото с аурой
-    capture_aura_photo(st.session_state.energy_values, st.session_state.language)
+    # Преобразуем все значения энергии в float перед вызовом функции
+    energy_values_float = {k: float(v) for k, v in st.session_state.energy_values.items()}
+    capture_aura_photo(energy_values_float, st.session_state.language)
     
     # Кнопка для возврата к основному режиму
     if st.button("↩️ Вернуться к основному режиму" if st.session_state.language == 'ru' else "↩️ Return to main mode"):
