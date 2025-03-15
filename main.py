@@ -9,7 +9,6 @@ from diagnostic_analyzer import DiagnosticReportAnalyzer
 from organs_visualization import OrgansVisualizer
 from organ_detail_visualization import OrganDetailVisualizer
 from aura_photo import capture_aura_photo
-from grv_camera import display_grv_interface
 
 # Initialize session state for language and view mode
 if 'language' not in st.session_state:
@@ -48,28 +47,8 @@ if 'chakra_data_source' not in st.session_state:
 # Флаг для отслеживания, были ли применены значения из других источников
 values_applied = False
 
-# Источник 1 (высший приоритет): ГРВ данные
-if 'chakra_values_from_grv' in st.session_state:
-    values_applied = True
-    print("ПРИОРИТЕТ 1: Применяем значения энергии чакр из ГРВ-сессии")
-    st.session_state.chakra_data_source = "grv"
-    
-    # Полностью заменяем словарь energy_values на значения из ГРВ
-    grv_values = {}
-    for chakra_name, energy_value in st.session_state.chakra_values_from_grv.items():
-        if isinstance(energy_value, (int, float)) and 0 <= energy_value <= 100:
-            grv_values[chakra_name] = float(energy_value)
-            print(f"Установлено значение чакры {chakra_name}: {energy_value}")
-        else:
-            grv_values[chakra_name] = 100.0  # Значение по умолчанию
-            print(f"Недопустимое значение чакры {chakra_name}: {energy_value}, установлено по умолчанию 100.0")
-    
-    # После создания полного словаря заменяем им текущие значения
-    if grv_values:
-        st.session_state.energy_values.update(grv_values)
-            
-# Источник 2: Анализ отчета диагностики (только если не применены значения из ГРВ)
-elif not values_applied and 'report_processed' in st.session_state and st.session_state.report_processed and 'report_analysis' in st.session_state and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
+# Источник 1: Анализ отчета диагностики
+if 'report_processed' in st.session_state and st.session_state.report_processed and 'report_analysis' in st.session_state and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
     values_applied = True
     print("ПРИОРИТЕТ 2: Применяем значения энергии чакр из диагностического отчета")
     st.session_state.chakra_data_source = "report"
@@ -88,7 +67,7 @@ elif not values_applied and 'report_processed' in st.session_state and st.sessio
     if report_values:
         st.session_state.energy_values.update(report_values)
     
-# Источник 3: Применение временных результатов (apply_results) (только если не применены значения из ГРВ или отчета)
+# Источник 2: Применение временных результатов (apply_results) если отчет не обработан
 elif not values_applied and 'apply_results' in st.session_state and st.session_state.apply_results and 'chakra_energy' in st.session_state.apply_results:
     values_applied = True
     print("ПРИОРИТЕТ 3: Применяем временные результаты анализа")
@@ -493,21 +472,14 @@ with col1:
             st.rerun()
     
     # Отображаем информацию об источнике данных
-    if st.session_state.chakra_data_source == "grv":
-        st.success("Используются данные ГРВ-сканирования для визуализации" if st.session_state.language == 'ru' else 
-                   "Using GRV scanning data for visualization", icon="📊")
-        # Добавляем информацию о времени последнего сканирования, если доступно
-        if 'grv_session_timestamp' in st.session_state:
-            timestamp = st.session_state.grv_session_timestamp
-            st.info(f"Данные ГРВ от: {timestamp}" if st.session_state.language == 'ru' else f"GRV data from: {timestamp}")
-    elif st.session_state.chakra_data_source == "report":
+    if st.session_state.chakra_data_source == "report":
         st.success(get_text("diagnostic_data_used"), icon="📋")
         st.markdown(get_text("chakra_values_auto_calculated"))
     elif st.session_state.chakra_data_source == "temp_results":
         st.info("Используются временные результаты анализа" if st.session_state.language == 'ru' else
                 "Using temporary analysis results", icon="🔄")
     else:
-        # Нет данных отчета или ГРВ, показываем информационное сообщение
+        # Нет данных отчета, показываем информационное сообщение
         st.warning(get_text("no_diagnostic_data"), icon="⚠️")
         st.markdown(get_text("please_upload_report"))
     
@@ -545,39 +517,22 @@ with col2:
         fig_3d = create_chakra_visualization_3d(st.session_state.energy_values, st.session_state.language)
         st.plotly_chart(fig_3d, use_container_width=True, height=700)
         
-    # Добавляем кнопку для создания фото с аурой, если есть данные ГРВ или отчета
-    if 'chakra_values_from_grv' in st.session_state or (st.session_state.report_processed and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis):
+    # Добавляем кнопку для создания фото с аурой, если есть данные отчета
+    if st.session_state.report_processed and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
         if st.button("📸 Сделать фото ауры" if st.session_state.language == 'ru' else "📸 Take Aura Photo"):
             # Переключаем на режим фотографии
             st.session_state.aura_photo_mode = True
             st.rerun()
     else:
-        # Если нет данных отчета или ГРВ, показываем сообщение вместо кнопки
+        # Если нет данных отчета, показываем сообщение вместо кнопки
         st.warning(get_text("no_report_for_aura"), icon="⚠️")
         
 # Если включен режим фотографии с аурой, показываем интерфейс для фото
 if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
     st.markdown("---")  # Разделитель
     
-    # Приоритет 1: Используем данные из ГРВ камеры, если они доступны
-    if 'chakra_values_from_grv' in st.session_state:
-        st.success("Используются данные ГРВ-сканирования для создания ауры" if st.session_state.language == 'ru' else 
-                  "Using GRV scanning data to create aura")
-        
-        # Копируем значения из ГРВ для фото ауры
-        grv_energy_values = {k: float(v) for k, v in st.session_state.chakra_values_from_grv.items()}
-        st.session_state.energy_values_aura = grv_energy_values
-        
-        # Показываем значения для отладки
-        st.sidebar.markdown("### GRV Chakra Energy Values")
-        for chakra_name, energy_value in grv_energy_values.items():
-            st.sidebar.text(f"{chakra_name}: {energy_value}")
-        
-        # Используем значения чакр из ГРВ для создания фото
-        capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
-        
-    # Приоритет 2: Используем данные из отчета диагностики, если нет ГРВ данных
-    elif 'report_processed' in st.session_state and st.session_state.report_processed:
+    # Используем данные из отчета диагностики
+    if 'report_processed' in st.session_state and st.session_state.report_processed:
         # Если был обработан диагностический отчет, берем актуальные значения
         if 'report_analysis' in st.session_state and st.session_state.report_analysis and 'chakra_energy' in st.session_state.report_analysis:
             st.info("Используются данные диагностического отчета для создания ауры" if st.session_state.language == 'ru' else 
@@ -600,7 +555,7 @@ if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
             # Если в отчете нет данных о чакрах
             st.error(get_text("no_chakra_data_in_report"))
     else:
-        # Если ни отчет, ни ГРВ данные не доступны
+        # Если отчет не доступен
         st.warning(get_text("no_report_for_aura"), icon="⚠️")
         st.info(get_text("please_upload_report_for_aura"))
     
@@ -736,51 +691,12 @@ if st.session_state.report_processed and st.session_state.report_analysis:
         else:
             st.info(get_text("select_organ"))
 
-# GRV Scanning section
-st.header(get_text("grv_tab_header"))
-st.markdown(get_text("grv_tab_info"))
-
-# Show attached PDF icon and documentation link
-col1_doc, col2_doc = st.columns([1, 3])
-with col1_doc:
-    st.markdown("""
-    <div style="text-align: center; margin-bottom: 20px;">
-        <img src="./assets/images/devices/grv_device_icon.svg" alt="ГРВ-ТБК 3.3" width="100"/>
-        <p>ГРВ-ТБК 3.3</p>
-    </div>
-    """, unsafe_allow_html=True)
-with col2_doc:
-    # Display a link to the documentation
-    st.markdown("""
-    📄 [ГРВ-ТБК 3.3 Документация](https://grv-bio.ru/tbk-manual)
-    """)
-    
-    # Let user know the GRV camera integration is ready
-    st.info(
-        "Интеграция с аппаратом ГРВ-ТБК 3.3 подготовлена и готова к использованию. "
-        "Подключите устройство к USB-порту компьютера для начала работы." 
-        if st.session_state.language == 'ru' else 
-        "Integration with GRV-TBK 3.3 device is prepared and ready to use. "
-        "Connect the device to a USB port on your computer to begin."
-    )
-
-# Initialize GRV mode session state
-if 'grv_mode' not in st.session_state:
-    st.session_state.grv_mode = False
-
-# Button to start GRV interface
-if st.button(get_text("grv_connect"), type="primary"):
-    st.session_state.grv_mode = True
-    st.rerun()
-
-# Display GRV interface if mode is active
-if st.session_state.grv_mode:
-    display_grv_interface(st.session_state.language)
-    
-    # Button to exit GRV mode
-    if st.button(get_text("grv_disconnect"), type="secondary"):
-        st.session_state.grv_mode = False
-        st.rerun()
+# Добавляем информацию о отдельной странице с ГРВ-сканированием
+st.info(
+    "💡 Для работы с ГРВ-диагностикой перейдите на отдельную страницу 'GRV Page' в меню навигации слева." 
+    if st.session_state.language == 'ru' else 
+    "💡 For GRV diagnostics, go to the 'GRV Page' in the navigation menu on the left."
+)
 
 # Divider
 st.markdown("---")
