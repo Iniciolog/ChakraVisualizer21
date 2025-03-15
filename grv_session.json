@@ -1,0 +1,78 @@
+{
+    "processed_data_serializable": {
+        "LEFT": {
+            "THUMB": {
+                "area": 1674.5,
+                "intensity": 16.853968098958333,
+                "symmetry": 0.9828152202468896,
+                "contour_count": 227
+            },
+            "INDEX": {
+                "area": 1674.5,
+                "intensity": 16.853968098958333,
+                "symmetry": 0.9828152202468896,
+                "contour_count": 227
+            },
+            "MIDDLE": {
+                "area": 4294.5,
+                "intensity": 17.0698046875,
+                "symmetry": 0.9611835668572558,
+                "contour_count": 161
+            },
+            "RING": {
+                "area": 4294.5,
+                "intensity": 17.0698046875,
+                "symmetry": 0.9611835668572558,
+                "contour_count": 161
+            },
+            "PINKY": {
+                "area": 28855.0,
+                "intensity": 17.327682291666665,
+                "symmetry": 0.9531327167628362,
+                "contour_count": 96
+            }
+        },
+        "RIGHT": {
+            "THUMB": {
+                "area": 28855.0,
+                "intensity": 17.327682291666665,
+                "symmetry": 0.9531327167628362,
+                "contour_count": 96
+            },
+            "INDEX": {
+                "area": 20933.0,
+                "intensity": 17.961005859375,
+                "symmetry": 0.9658811746644,
+                "contour_count": 47
+            },
+            "MIDDLE": {
+                "area": 24107.0,
+                "intensity": 17.6724609375,
+                "symmetry": 0.9792681019481771,
+                "contour_count": 74
+            },
+            "RING": {
+                "area": 20933.0,
+                "intensity": 17.961005859375,
+                "symmetry": 0.9658811746644,
+                "contour_count": 47
+            },
+            "PINKY": {
+                "area": 20933.0,
+                "intensity": 17.961005859375,
+                "symmetry": 0.9658811746644,
+                "contour_count": 47
+            }
+        }
+    },
+    "chakra_values": {
+        "Root": 14.02880119025735,
+        "Sacral": 4.676267063419117,
+        "Solar Plexus": 13.154827610294115,
+        "Heart": 16.21687408547794,
+        "Throat": 14.667890969669116,
+        "Third Eye": 10.960118965992645,
+        "Crown": 22.156443111213232
+    },
+    "balance_index": 70.0799514056101
+}
