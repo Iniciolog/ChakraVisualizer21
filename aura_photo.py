@@ -222,6 +222,11 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
     result_container = st.empty()
     buttons_container = st.container()
     
+    # Сохраняем значения энергии чакр для использования их в ауре
+    # Это позволяет сохранить значения даже при перезагрузке камеры
+    if 'saved_energy_values' not in st.session_state:
+        st.session_state.saved_energy_values = energy_values
+    
     # Состояние приложения для работы с камерой
     if 'camera_active' not in st.session_state:
         st.session_state.camera_active = False
@@ -240,6 +245,8 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
             # Кнопка запуска камеры без перезагрузки всего приложения
             start_button = cols[0].button(t['start'], key='start_camera')
             if start_button:
+                # Обновляем сохраненные значения энергии перед активацией камеры
+                st.session_state.saved_energy_values = energy_values
                 st.session_state.camera_active = True
         
         elif st.session_state.camera_active and not st.session_state.photo_taken:
@@ -260,10 +267,11 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                             
                             # Генерируем изображение ауры
                             with st.spinner(t['processing']):
-                                # Создаем ауру
-                                aura_img = create_aura_only(energy_values, 
-                                                            width=img_array.shape[1], 
-                                                            height=img_array.shape[0])
+                                # Используем сохраненные значения энергии чакр
+                                # Создаем ауру с сохраненными значениями энергии
+                                aura_img = create_aura_only(st.session_state.saved_energy_values, 
+                                                           width=img_array.shape[1], 
+                                                           height=img_array.shape[0])
                                 
                                 # Накладываем ауру на фото
                                 result_img = overlay_aura_on_photo(img_array, aura_img)
