@@ -216,7 +216,11 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
             'download': 'Скачать фото',
             'retry': 'Сделать новое фото',
             'no_camera': 'Камера не обнаружена или недоступна',
-            'camera_permission': 'Пожалуйста, разрешите доступ к камере в браузере'
+            'camera_permission': 'Пожалуйста, разрешите доступ к камере в браузере',
+            'upload_option': 'или загрузите готовое изображение',
+            'upload_button': 'Загрузить изображение',
+            'upload_help': 'Поддерживаемые форматы: JPG, PNG',
+            'select_option': 'Выберите способ создания фото с аурой:'
         },
         'en': {
             'title': 'Take a photo with aura',
@@ -227,7 +231,11 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
             'download': 'Download photo',
             'retry': 'Take another photo',
             'no_camera': 'Camera not detected or not available',
-            'camera_permission': 'Please allow camera access in your browser'
+            'camera_permission': 'Please allow camera access in your browser',
+            'upload_option': 'or upload an existing image',
+            'upload_button': 'Upload image',
+            'upload_help': 'Supported formats: JPG, PNG',
+            'select_option': 'Select how to create your aura photo:'
         }
     }
     
@@ -246,7 +254,7 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
     if 'saved_energy_values' not in st.session_state:
         st.session_state.saved_energy_values = energy_values
     
-    # Состояние приложения для работы с камерой
+    # Состояние приложения для работы с камерой и загрузкой
     if 'camera_active' not in st.session_state:
         st.session_state.camera_active = False
     
@@ -255,6 +263,9 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
     
     if 'result_image' not in st.session_state:
         st.session_state.result_image = None
+        
+    if 'upload_active' not in st.session_state:
+        st.session_state.upload_active = False
     
     # Кнопки управления
     with buttons_container:
