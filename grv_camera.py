@@ -1551,17 +1551,24 @@ def display_grv_interface(lang: str = 'ru'):
                             st.markdown(f"**Статус:** {organ_status_info['status_label']}")
                             st.markdown(f"**Параметры:**")
                             
-                            for param in organ_status_info['parameters']:
-                                param_value = diagnostic_data[param]['value']
-                                st.progress(param_value)
-                                if param_value < diagnostic_data[param]['critical_min']:
-                                    st.warning(f"{param}: {param_value:.2f} - Ниже нормы")
-                                elif param_value > diagnostic_data[param]['critical_max']:
-                                    st.warning(f"{param}: {param_value:.2f} - Выше нормы")
-                                elif diagnostic_data[param]['normal_min'] <= param_value <= diagnostic_data[param]['normal_max']:
-                                    st.success(f"{param}: {param_value:.2f} - В норме")
+                            for param_info in organ_status_info['parameters']:
+                                param_name = param_info['name']
+                                param_value = param_info['result']
+                                normal_min, normal_max = param_info['normal_range']
+                                
+                                # Отображаем прогресс
+                                normalized_value = min(100, max(0, param_value)) # ограничиваем от 0 до 100 для progress bar
+                                st.progress(normalized_value / 100)  # progress принимает значения от 0 до 1
+                                
+                                # Проверяем статус параметра
+                                if param_info['status'] == 'critical_low':
+                                    st.warning(f"{param_name}: {param_value:.2f} - Ниже нормы")
+                                elif param_info['status'] == 'critical_high':
+                                    st.warning(f"{param_name}: {param_value:.2f} - Выше нормы") 
+                                elif param_info['status'] == 'normal':
+                                    st.success(f"{param_name}: {param_value:.2f} - В норме")
                                 else:
-                                    st.info(f"{param}: {param_value:.2f} - Пограничное значение")
+                                    st.info(f"{param_name}: {param_value:.2f} - Пограничное значение")
                             
                             # Детальная визуализация органа
                             detail_visualizer = OrganDetailVisualizer(lang)
