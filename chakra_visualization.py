@@ -85,21 +85,49 @@ def draw_chakras(ax, energy_values, language='en'):
         # Calculate color based on energy level
         color = utils.calculate_chakra_color(base_color, energy)
         
-        # Size depends on energy (более значительное изменение размера)
-        size = 0.2 + (0.5 * energy)
+        # Применяем нелинейную коррекцию для более выраженного эффекта размера
+        # Чакры с очень малой энергией (< 20%) будут иметь минимальный размер 0.25
+        # Чакры с высокой энергией (> 80%) будут иметь максимальный размер до 0.85
+        if energy < 0.2:
+            # Нелинейная коррекция для малых значений
+            size_factor = 0.25 + (energy / 0.2) * 0.2  # От 0.25 до 0.45
+        elif energy < 0.5:
+            # Средний диапазон
+            size_factor = 0.45 + ((energy - 0.2) / 0.3) * 0.15  # От 0.45 до 0.6
+        else:
+            # Высокий диапазон с усиленным ростом
+            size_factor = 0.6 + ((energy - 0.5) / 0.5) * 0.25  # От 0.6 до 0.85
+            
+        # Финальный размер чакры
+        size = size_factor
         
         # Add chakra circle
         circle = Circle(position, size, color=tuple(c/255 for c in color), 
-                        alpha=0.8, zorder=10)
+                        alpha=0.9, zorder=10)
         ax.add_patch(circle)
         
-        # Add pulsating effect if energy is high
-        if energy > 0.7:
-            for i in range(1, 4):
-                scale = 1 + (i * 0.4)
+        # Добавляем внутреннее кольцо для визуального улучшения
+        inner_circle = Circle(position, size * 0.7, 
+                             color=tuple(min(255, c+40)/255 for c in color), 
+                             alpha=0.8, zorder=11)
+        ax.add_patch(inner_circle)
+        
+        # Add pulsating effect with energy-dependent intensity
+        if energy > 0.5:
+            # Количество и интенсивность пульсаций зависят от уровня энергии
+            pulse_count = 1 + int(energy * 3)  # От 2 до 4 кольца
+            
+            for i in range(1, pulse_count):
+                # Размер пульсаций увеличивается с энергией
+                scale = 1 + (i * 0.3) + (energy * 0.3)  # Более крупные кольца при высокой энергии
+                
+                # Интенсивность (прозрачность) также зависит от энергии
+                base_alpha = 0.25 * energy  # База интенсивности зависит от энергии
+                alpha = base_alpha - (i * 0.05)
+                
                 pulse = Circle(position, size * scale, 
                               color=tuple(c/255 for c in color), 
-                              alpha=0.2 - (i * 0.05), zorder=9)
+                              alpha=alpha, zorder=9)
                 ax.add_patch(pulse)
         
         # Add label
@@ -109,30 +137,92 @@ def draw_chakras(ax, energy_values, language='en'):
 
 def draw_biofield(ax, energy_values):
     """Draw the biofield/aura around the silhouette"""
-    # Calculate average energy
-    avg_energy = sum(energy_values.values()) / len(energy_values)
+    # Calculate average energy with weighted importance
+    # Вычисляем среднюю энергию с учетом весов чакр
+    # Некоторые чакры могут иметь больший вес для общей ауры
+    chakra_weights = {
+        "Root": 1.2,        # Корневая чакра - основа и стабильность
+        "Sacral": 1.1,      # Сакральная - эмоции, творчество
+        "Solar Plexus": 1.0, # Солнечное сплетение - воля, сила
+        "Heart": 1.3,       # Сердечная - самая важная для ауры
+        "Throat": 0.9,      # Горловая - самовыражение
+        "Third Eye": 1.0,   # Третий глаз - интуиция
+        "Crown": 1.1        # Коронная - духовная связь
+    }
+    
+    weighted_energy_sum = 0
+    weight_sum = 0
+    
+    for name, energy in energy_values.items():
+        weight = chakra_weights.get(name, 1.0)
+        weighted_energy_sum += energy * weight
+        weight_sum += weight
+    
+    avg_energy = weighted_energy_sum / weight_sum
     avg_energy_pct = avg_energy / 100.0
+    
+    # Применяем нелинейную коррекцию для более выраженной ауры даже при низких значениях
+    adjusted_avg_energy_pct = avg_energy_pct**0.7  # Экспоненциальная коррекция
     
     # Base shape of the aura
     center_x, center_y = 0, 4
     aura_width = 4.5
     aura_height = 8
     
-    # Create multiple layers of the aura
-    layers = 7
-    for i in range(layers):
+    # Create multiple layers of the aura - больше слоев для более плавного перехода
+    layers = 9  # было 7
+    
+    # Добавляем эффект внешнего свечения для высоких уровней энергии
+    has_glow = avg_energy_pct > 0.7
+    glow_layers = 3 if has_glow else 0
+    
+    # Создаем основные слои ауры
+    for i in range(layers + glow_layers):
+        # Определяем, является ли это слоем свечения
+        is_glow_layer = i >= layers
+        
         # Calculate the scale for this layer
-        scale = 1 - (i / layers)
+        if is_glow_layer:
+            # Свечение имеет больший размер
+            glow_index = i - layers
+            scale = 0.3 - (glow_index * 0.1)  # Постепенно затухает
+        else:
+            scale = 1 - (i / layers)
         
         # Scale the size and alpha based on energy (улучшенная версия)
-        # Если средняя энергия низкая, аура будет заметно меньше
-        energy_factor = 0.4 + (avg_energy_pct * 0.6)  # От 0.4 до 1.0 вместо от 0.6 до 1.0
-        layer_width = aura_width * energy_factor * (1 + i*0.2)  # Увеличен шаг между слоями
-        layer_height = aura_height * energy_factor * (1 + i*0.2)
+        # Применяем нелинейное масштабирование размера ауры в зависимости от энергии
+        if avg_energy_pct < 0.3:
+            # При низкой энергии аура меньше, но всё равно заметна
+            energy_factor = 0.5 + (adjusted_avg_energy_pct * 0.7)  # От 0.5 до 0.7
+        elif avg_energy_pct < 0.7:
+            # Средний диапазон
+            energy_factor = 0.7 + ((adjusted_avg_energy_pct - 0.3) / 0.4) * 0.3  # От 0.7 до 1.0
+        else:
+            # При высокой энергии аура расширяется
+            energy_factor = 1.0 + ((adjusted_avg_energy_pct - 0.7) / 0.3) * 0.2  # От 1.0 до 1.2
         
-        # Делаем ауру более яркой для лучшей видимости даже при низких значениях
-        base_alpha = 0.3  # Базовая непрозрачность (была 0.15)
-        alpha = base_alpha * scale * (0.5 + avg_energy_pct * 0.5)  # От 50% до 100% базовой непрозрачности
+        # Добавляем разрыв между слоями, увеличивающийся для внешних слоев
+        layer_scale = 1 + (i * (0.15 + avg_energy_pct * 0.1))  # Больший разрыв при высокой энергии
+        
+        layer_width = aura_width * energy_factor * layer_scale
+        layer_height = aura_height * energy_factor * layer_scale
+        
+        # Настраиваем прозрачность в зависимости от типа слоя и уровня энергии
+        if is_glow_layer:
+            # Свечение имеет особую прозрачность
+            base_alpha = 0.15
+            alpha = base_alpha * (1 - (glow_index / glow_layers))
+        else:
+            # Делаем ауру более яркой для лучшей видимости даже при низких значениях
+            base_alpha = 0.35  # Базовая непрозрачность (увеличена)
+            
+            # При высокой энергии внутренние слои ярче, при низкой - более равномерны
+            if avg_energy_pct > 0.7:
+                alpha_scale = scale**1.5  # Более резкое падение с расстоянием
+            else:
+                alpha_scale = scale**0.8  # Более плавное падение
+                
+            alpha = base_alpha * alpha_scale * (0.7 + adjusted_avg_energy_pct * 0.6)  # От 70% до 130% базовой непрозрачности
         
         # Blend colors from each chakra based on energy
         blended_color = [0, 0, 0]
