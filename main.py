@@ -8,6 +8,7 @@ import utils
 from diagnostic_analyzer import DiagnosticReportAnalyzer
 from organs_visualization import OrgansVisualizer
 from organ_detail_visualization import OrganDetailVisualizer
+from aura_photo import capture_aura_photo
 
 # Initialize session state for language and view mode
 if 'language' not in st.session_state:
