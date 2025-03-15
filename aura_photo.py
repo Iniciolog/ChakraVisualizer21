@@ -61,7 +61,20 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
     # Рассчитываем радиус ауры для каждой чакры на основании её энергии
     # Чем выше энергия чакры, тем дальше будет распространяться её аура
     chakra_radius = {}
-    base_radius = min(width, height) * 0.5  # Базовый радиус ауры
+    
+    # Ограничиваем базовый радиус ауры, чтобы она гарантированно помещалась в изображение
+    # Используем 40% от минимального измерения, обеспечивая отступ от края
+    base_radius = min(width, height) * 0.4  # Уменьшенный базовый радиус ауры
+    
+    # Определяем расстояние от центра до края с запасом
+    edge_distance_x = min(center_x, width - center_x) * 0.95
+    edge_distance_y = min(center_y, height - center_y) * 0.95
+    
+    # Выбираем наименьшее расстояние для ограничения радиуса
+    max_allowed_radius = min(edge_distance_x, edge_distance_y, base_radius)
+    
+    # Используем это значение как базовый радиус
+    base_radius = max_allowed_radius
     
     for chakra, energy in energy_values_float.items():
         # Вычисляем радиус ауры от 30% до 100% от базового радиуса
