@@ -12,6 +12,7 @@ import streamlit as st
 from PIL import Image
 import matplotlib.pyplot as plt
 from enum import Enum
+from diagnostic_analyzer import DiagnosticReportAnalyzer
 
 class FingerType(Enum):
     """Типы пальцев для ГРВ-сканирования"""
@@ -966,6 +967,96 @@ def display_grv_interface(lang: str = 'ru'):
                     # Уведомление о готовности данных
                     st.success("Данные обработаны и готовы к использованию в основном приложении." if lang == 'ru' else 
                              "Data processed and ready for use in the main application.")
+                    
+                    # Добавляем кнопку для создания и отображения полной визуализации
+                    if st.button("Показать полную визуализацию" if lang == 'ru' else "Show Full Visualization"):
+                        # Показываем визуализацию ауры
+                        st.subheader("Визуализация ауры" if lang == 'ru' else "Aura Visualization")
+                        
+                        # Используем функцию из aura_photo для создания изображения ауры
+                        from aura_photo import create_aura_only, overlay_aura_on_photo
+                        
+                        # Создаем только изображение ауры
+                        aura_img = create_aura_only(energy_model["chakra_values"], width=600, height=800)
+                        
+                        # Выводим изображение ауры
+                        st.image(aura_img, caption="Аура" if lang == 'ru' else "Aura", use_column_width=True)
+                        
+                        # Визуализация чакр
+                        st.subheader("Визуализация чакр" if lang == 'ru' else "Chakra Visualization")
+                        
+                        # Используем функцию из chakra_visualization
+                        from chakra_visualization import create_chakra_visualization
+                        
+                        # Создаем визуализацию чакр
+                        fig_chakra = create_chakra_visualization(energy_model["chakra_values"], lang)
+                        st.pyplot(fig_chakra)
+                        
+                        # Визуализация органов
+                        st.subheader("Состояние органов" if lang == 'ru' else "Organs State")
+                        
+                        # Используем функцию из organs_visualization
+                        from organs_visualization import OrgansVisualizer
+                        
+                        # Тут мы конвертируем значения чакр в диагностические данные для органов
+                        # Это упрощенная версия для демонстрации
+                        diagnostic_data = {}
+                        
+                        # Создаем простое отображение на основании энергии чакр
+                        for param, mapping in DiagnosticReportAnalyzer.parameter_to_chakra_mapping.items():
+                            # Рассчитываем значение параметра на основе энергии чакр
+                            param_value = 0
+                            weight_sum = 0
+                            
+                            for chakra_name, weight in mapping:
+                                if chakra_name in energy_model["chakra_values"]:
+                                    param_value += energy_model["chakra_values"][chakra_name] * weight
+                                    weight_sum += weight
+                            
+                            if weight_sum > 0:
+                                param_value = param_value / weight_sum
+                                
+                                # Определяем статус на основе значения
+                                status = "normal"
+                                if param_value < 40:
+                                    status = "low"
+                                elif param_value > 80:
+                                    status = "high"
+                                
+                                # Записываем данные
+                                diagnostic_data[param] = {
+                                    "result": param_value,
+                                    "normal_range": (40, 80),
+                                    "status": status
+                                }
+                        
+                        # Создаем визуализатор органов
+                        organs_viz = OrgansVisualizer(lang)
+                        
+                        # Создаем визуализацию органов
+                        fig_organs = organs_viz.create_organs_visualization(diagnostic_data)
+                        st.pyplot(fig_organs)
+                        
+                        # Добавляем детальную информацию о чакрах
+                        st.subheader("Детальная информация о чакрах" if lang == 'ru' else "Detailed Chakra Information")
+                        
+                        # Получаем детальную информацию о каждой чакре
+                        chakra_details = grv.get_energy_details(energy_model["chakra_values"])
+                        
+                        # Отображаем информацию в аккордеоне для каждой чакры
+                        for chakra_name, details in chakra_details.items():
+                            with st.expander(f"{chakra_name} - {details['status']}"):
+                                st.write(f"**Энергия:** {details['energy']:.1f}%")
+                                st.write(f"**Состояние:** {details['status']}")
+                                st.write(f"**Описание:** {details['description']}")
+                        
+                        # Добавляем возможность сохранить результаты в PDF
+                        st.download_button(
+                            "Сохранить отчет (PDF)" if lang == 'ru' else "Save Report (PDF)",
+                            data="PDF Report Coming Soon",  # Здесь будет PDF
+                            file_name="energy_report.pdf",
+                            mime="application/pdf"
+                        )
     
     # Кнопки сохранения и загрузки сессии
     if col2.button("Сохранить сессию" if lang == 'ru' else "Save session"):
