@@ -59,6 +59,8 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
                     
                     # Вычисляем, какая чакра оказывает наибольшее влияние на данный угол
                     # Смещаем углы, чтобы нижние чакры были внизу, а верхние вверху
+                    chakra_influence = ["Root", "Sacral"]  # По умолчанию
+                    
                     if 225 <= angle_deg <= 315:  # Нижняя часть ауры
                         chakra_influence = ["Root", "Sacral"]
                     elif (315 < angle_deg <= 360) or (0 <= angle_deg < 45):  # Правая часть
@@ -70,10 +72,10 @@ def create_aura_only(energy_values: Dict[str, float], width=500, height=600) -> 
                     
                     # Вычисляем цвет на основе влияния чакр
                     color = [0, 0, 0]
-                    weight_sum = 0
+                    weight_sum = 0.0
                     
                     for chakra in chakra_influence:
-                        weight = energy_values[chakra] / 100
+                        weight = float(energy_values[chakra]) / 100.0
                         weight_sum += weight
                         color[0] += chakra_colors[chakra][0] * weight
                         color[1] += chakra_colors[chakra][1] * weight
