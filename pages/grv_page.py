@@ -264,7 +264,8 @@ if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
         
         # Копируем значения из ГРВ для фото ауры
         grv_energy_values = {k: float(v) for k, v in st.session_state.chakra_values_from_grv.items()}
-        st.session_state.energy_values_aura = grv_energy_values
+        # Используем локальную переменную для ГРВ, чтобы избежать влияния на основное приложение
+        st.session_state.grv_aura_values = grv_energy_values
         
         # Показываем значения для отладки в сайдбаре
         st.sidebar.markdown("### GRV Chakra Energy Values")
@@ -272,7 +273,7 @@ if 'aura_photo_mode' in st.session_state and st.session_state.aura_photo_mode:
             st.sidebar.text(f"{chakra_name}: {energy_value}")
         
         # Используем значения чакр из ГРВ для создания фото
-        capture_aura_photo(st.session_state.energy_values_aura, st.session_state.language)
+        capture_aura_photo(st.session_state.grv_aura_values, st.session_state.language)
     else:
         # Если нет данных ГРВ, показываем сообщение
         st.warning("Необходимо провести ГРВ-сканирование для создания фото ауры", icon="⚠️")
