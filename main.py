@@ -110,13 +110,13 @@ def get_text(key):
 
 # Set page configuration
 st.set_page_config(
-    page_title=get_text("page_title"),
+    page_title="Bioresonans Lab | KIRLIAN PLATFORM",
     page_icon="🧘",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
         'About': """
-        ### AURA STUDIO
+        ### Bioresonans Lab | KIRLIAN PLATFORM
         **Разработано в НИЦ Инициологии и трансперсональной психологии**
         
         Streamlit v1.43.1
@@ -200,8 +200,8 @@ with st.sidebar:
         st.info(get_text("view_3d_help"))
 
 # Page title and introduction
-st.title(get_text("app_title"))
-st.markdown(get_text("app_intro"))
+st.title("Bioresonans Lab | KIRLIAN PLATFORM")
+st.markdown("Лаборатория биорезонансной диагностики и анализа энергетического поля человека")
 
 # Client information form
 st.header(get_text("client_info_header"))
