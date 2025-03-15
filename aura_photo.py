@@ -287,17 +287,42 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
             
             if st.session_state.result_image is not None:
                 # Конвертируем изображение для скачивания
-                result_pil = Image.fromarray(st.session_state.result_image)
-                buf = io.BytesIO()
-                result_pil.save(buf, format="PNG")
-                
-                cols[1].download_button(
-                    label=t['download'],
-                    data=buf.getvalue(),
-                    file_name="aura_photo.png",
-                    mime="image/png",
-                    key='download_photo'
-                )
+                try:
+                    # Уменьшаем размер изображения перед скачиванием, если оно слишком большое
+                    result_img = st.session_state.result_image
+                    max_dimension = 1200  # Максимальный размер изображения для скачивания
+                    
+                    height, width = result_img.shape[:2]
+                    if width > max_dimension or height > max_dimension:
+                        # Вычисляем новый размер с сохранением соотношения сторон
+                        if width > height:
+                            new_width = max_dimension
+                            new_height = int(height * (max_dimension / width))
+                        else:
+                            new_height = max_dimension
+                            new_width = int(width * (max_dimension / height))
+                        
+                        # Уменьшаем изображение
+                        result_img = cv2.resize(result_img, (new_width, new_height))
+                    
+                    # Преобразуем в PIL Image и сохраняем в буфер
+                    result_pil = Image.fromarray(result_img)
+                    buf = io.BytesIO()
+                    
+                    # Используем JPEG вместо PNG для уменьшения размера
+                    result_pil.save(buf, format="JPEG", quality=85)
+                    
+                    cols[1].download_button(
+                        label=t['download'],
+                        data=buf.getvalue(),
+                        file_name="aura_photo.jpg",
+                        mime="image/jpeg",
+                        key='download_photo'
+                    )
+                except Exception as e:
+                    import traceback
+                    st.error(f"Ошибка при подготовке изображения для скачивания: {str(e)}")
+                    st.error(traceback.format_exc())
     
     # Показываем камеру или результат
     if st.session_state.camera_active:
