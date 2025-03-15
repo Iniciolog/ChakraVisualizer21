@@ -559,7 +559,7 @@ col1_doc, col2_doc = st.columns([1, 3])
 with col1_doc:
     st.markdown("""
     <div style="text-align: center; margin-bottom: 20px;">
-        <img src="https://raw.githubusercontent.com/replit/super-codex/main/assets/grv_device_icon.png" alt="ГРВ-ТБК 3.3" width="100"/>
+        <img src="./assets/images/devices/grv_device_icon.svg" alt="ГРВ-ТБК 3.3" width="100"/>
         <p>ГРВ-ТБК 3.3</p>
     </div>
     """, unsafe_allow_html=True)
