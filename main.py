@@ -416,6 +416,82 @@ with col1:
         if chakra['name'] not in st.session_state.energy_values:
             st.session_state.energy_values[chakra['name']] = 100
     
+    # Добавляем экспандер с тестовыми профилями для отладки визуализации
+    with st.expander(get_text("energy_profiles")):
+        st.caption(get_text("energy_profile_description"))
+        
+        # Профили энергии для тестирования
+        energy_profiles = {
+            "custom": "Пользовательский",
+            "all_100": "Все чакры 100%",
+            "all_50": "Все чакры 50%",
+            "linear_up": "Рост снизу вверх",
+            "linear_down": "Убывание сверху вниз",
+            "alternating": "Чередование значений",
+            "low_energy": "Низкая энергия",
+            "high_energy": "Высокая энергия",
+            "imbalanced": "Дисбаланс энергий"
+        }
+        
+        selected_profile = st.selectbox(
+            "Выберите профиль энергии:",
+            options=list(energy_profiles.keys()),
+            format_func=lambda x: energy_profiles[x],
+            index=list(energy_profiles.keys()).index(st.session_state.energy_profile) if st.session_state.energy_profile in energy_profiles else 0
+        )
+        
+        # Обновляем выбранный профиль
+        if selected_profile != st.session_state.energy_profile:
+            st.session_state.energy_profile = selected_profile
+            
+            # Применяем выбранный профиль к значениям энергии
+            if selected_profile == "all_100":
+                for chakra in chakra_data:
+                    st.session_state.energy_values[chakra['name']] = 100
+            elif selected_profile == "all_50":
+                for chakra in chakra_data:
+                    st.session_state.energy_values[chakra['name']] = 50
+            elif selected_profile == "linear_up":
+                chakra_names = [c['name'] for c in chakra_data]
+                for i, chakra_name in enumerate(chakra_names):
+                    # От 30% до 90%
+                    energy = 30 + 60 * i / (len(chakra_names) - 1)
+                    st.session_state.energy_values[chakra_name] = energy
+            elif selected_profile == "linear_down":
+                chakra_names = [c['name'] for c in chakra_data]
+                for i, chakra_name in enumerate(chakra_names):
+                    # От 90% до 30%
+                    energy = 90 - 60 * i / (len(chakra_names) - 1)
+                    st.session_state.energy_values[chakra_name] = energy
+            elif selected_profile == "alternating":
+                chakra_names = [c['name'] for c in chakra_data]
+                for i, chakra_name in enumerate(chakra_names):
+                    energy = 40 if i % 2 == 0 else 80
+                    st.session_state.energy_values[chakra_name] = energy
+            elif selected_profile == "low_energy":
+                for chakra in chakra_data:
+                    # От 10% до 30%
+                    st.session_state.energy_values[chakra['name']] = 10 + 20 * (chakra_data.index(chakra) / (len(chakra_data) - 1))
+            elif selected_profile == "high_energy":
+                for chakra in chakra_data:
+                    # От 70% до 90%
+                    st.session_state.energy_values[chakra['name']] = 70 + 20 * (chakra_data.index(chakra) / (len(chakra_data) - 1))
+            elif selected_profile == "imbalanced":
+                energy_map = {
+                    "Root": 85,
+                    "Sacral": 40,
+                    "Solar Plexus": 70,
+                    "Heart": 30,
+                    "Throat": 90,
+                    "Third Eye": 50, 
+                    "Crown": 60
+                }
+                for chakra_name, energy in energy_map.items():
+                    st.session_state.energy_values[chakra_name] = energy
+            
+            # Обновляем страницу
+            st.rerun()
+    
     # Отображаем информацию об источнике данных
     if st.session_state.chakra_data_source == "grv":
         st.success("Используются данные ГРВ-сканирования для визуализации" if st.session_state.language == 'ru' else 
