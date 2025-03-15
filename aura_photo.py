@@ -386,19 +386,11 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                                 # Накладываем ауру на фото
                                 result_img = overlay_aura_on_photo(img_array, aura_img)
                                 
-                                # Сохраняем результат и всю важную информацию о состоянии
+                                # Сохраняем результат
                                 st.session_state.result_image = result_img
                                 st.session_state.photo_taken = True
                                 st.session_state.camera_active = False
-                                
-                                # Обеспечиваем сохранение важных переменных сессии перед перезапуском
-                                if 'energy_values' in st.session_state:
-                                    st.session_state.saved_energy_values_backup = st.session_state.energy_values.copy()
-                                if 'chakra_values_from_grv' in st.session_state:
-                                    st.session_state.chakra_values_from_grv_backup = st.session_state.chakra_values_from_grv.copy()
-                                    
-                                # НЕ используем st.rerun() чтобы избежать сброса состояния
-                                # Просто обновляем нужные переменные состояния для обновления интерфейса
+                                st.rerun()
                         else:
                             st.error("Не удалось получить изображение с камеры")
                     else:
@@ -418,7 +410,8 @@ def capture_aura_photo(energy_values: Dict[str, float], language='ru'):
                 st.session_state.camera_active = False
                 st.session_state.upload_active = False
                 st.session_state.result_image = None
-                # НЕ используем rerun - только обновляем переменные состояния
+                # Используем rerun для обновления интерфейса и возврата к выбору опций
+                st.rerun()
             
             # Кнопка "Скачать фото" во второй колонке
             if st.session_state.result_image is not None:
