@@ -709,14 +709,73 @@ class GRVCamera:
             return False
 
 
+def process_uploaded_grv_image(grv, uploaded_file, hand: HandType, finger: FingerType, lang: str = 'ru'):
+    """
+    Обработка загруженного ГРВ-изображения
+    
+    Args:
+        grv: Экземпляр класса GRVCamera
+        uploaded_file: Загруженный файл из st.file_uploader
+        hand (HandType): Тип руки (левая/правая)
+        finger (FingerType): Тип пальца
+        lang (str): Язык интерфейса ('ru' или 'en')
+        
+    Returns:
+        bool: True если обработка успешна, иначе False
+    """
+    try:
+        # Чтение изображения из загруженного файла
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        frame = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        
+        if frame is None:
+            st.error("Не удалось прочитать изображение" if lang == 'ru' else "Failed to read image")
+            return False
+        
+        # Сохраняем изображение в памяти
+        grv.finger_images[hand][finger] = frame
+        
+        # Для демонстрации, сохраняем изображение на диск
+        os.makedirs(grv.temp_folder, exist_ok=True)
+        filename = f"{grv.temp_folder}/grv_{hand.name.lower()}_{finger.name.lower()}.jpg"
+        cv2.imwrite(filename, frame)
+        
+        # Отображаем загруженное изображение
+        st.image(frame, caption=f"Загруженное изображение" if lang == 'ru' else "Uploaded image")
+        
+        # Обрабатываем и отображаем результаты
+        results = grv.process_grv_image(frame)
+        
+        # Сохраняем результаты обработки
+        grv.processed_data[hand][finger] = results
+        
+        # Отображаем обработанное изображение
+        if "processed_image" in results:
+            st.image(results["processed_image"], 
+                    caption="Обработанное изображение" if lang == 'ru' else "Processed image")
+        
+        # Отображаем параметры
+        if "area" in results and "intensity" in results:
+            st.write(f"Площадь: {results['area']:.2f} пикс.")
+            st.write(f"Интенсивность: {results['intensity']:.2f}")
+            if "symmetry" in results:
+                st.write(f"Симметрия: {results['symmetry']:.2f}")
+        
+        return True
+        
+    except Exception as e:
+        st.error(f"Ошибка при обработке изображения: {e}" if lang == 'ru' else f"Error processing image: {e}")
+        return False
+
+
 def display_grv_interface(lang: str = 'ru'):
     """
-    Отображение интерфейса для работы с ГРВ-камерой в Streamlit
+    Отображение интерфейса для работы с ГРВ-изображениями в Streamlit
     
     Args:
         lang (str): Язык интерфейса ('ru' или 'en')
     """
-    st.title("ГРВ Сканирование" if lang == 'ru' else "GRV Scanning")
+    st.title("ГРВ Анализ" if lang == 'ru' else "GRV Analysis")
     
     # Инициализация GRV-камеры, если она еще не инициализирована
     if 'grv_camera' not in st.session_state:
@@ -727,71 +786,8 @@ def display_grv_interface(lang: str = 'ru'):
     # Верхние кнопки управления
     col1, col2, col3 = st.columns(3)
     
-    # Подключение/отключение камеры
-    if not grv.connected:
-        # Поиск доступных камер
-        if 'camera_search_done' not in st.session_state or not st.session_state.camera_search_done:
-            with st.spinner("Поиск доступных устройств..." if lang == 'ru' else "Searching for available devices..."):
-                available_cameras = grv.list_available_cameras()
-                st.session_state.available_cameras = available_cameras
-                st.session_state.camera_search_done = True
-        
-        # Отображение списка доступных камер, если они найдены
-        if hasattr(st.session_state, 'available_cameras') and st.session_state.available_cameras:
-            available_cameras = st.session_state.available_cameras
-            
-            # Преобразуем в формат для selectbox
-            camera_options = [f"{camera_info} (ID: {camera_id})" for camera_id, camera_info in available_cameras.items()]
-            camera_ids = list(available_cameras.keys())
-            
-            # Отображаем выбор устройства
-            selected_option = st.selectbox(
-                "Выберите устройство:" if lang == 'ru' else "Select device:", 
-                options=camera_options
-            )
-            
-            # Получаем ID выбранной камеры
-            selected_index = camera_options.index(selected_option)
-            selected_camera_id = camera_ids[selected_index]
-            
-            # Сохраняем выбранную камеру
-            grv.camera_id = selected_camera_id
-            
-            # Кнопка для подключения к выбранной камере
-            if col1.button(grv.t['connect']):
-                if grv.connect():
-                    st.success(grv.t['connected'])
-                else:
-                    st.error(grv.t['no_camera'])
-                    
-        else:
-            st.error("Устройства не найдены. Пожалуйста, подключите ГРВ-камеру и перезагрузите страницу." if lang == 'ru' else 
-                    "No devices found. Please connect the GRV camera and reload the page.")
-            
-            # Кнопка для повторного поиска устройств
-            if st.button("Повторить поиск" if lang == 'ru' else "Retry search"):
-                st.session_state.camera_search_done = False
-                st.rerun()
-    else:
-        if col1.button(grv.t['disconnect']):
-            grv.disconnect()
-            # Сброс состояния поиска камеры при отключении
-            st.session_state.camera_search_done = False
-            st.info(grv.t['disconnected'])
-    
-    # Кнопка калибровки
-    if col2.button(grv.t['calibrate']):
-        if not grv.connected:
-            st.error(grv.t['camera_not_initialized'])
-        else:
-            with st.spinner(grv.t['processing']):
-                if grv.calibrate():
-                    st.success(grv.t['calibration_complete'])
-                else:
-                    st.error(grv.t['calibration_failed'])
-    
     # Кнопка очистки
-    if col3.button(grv.t['clear_all']):
+    if col3.button("Очистить все" if lang == 'ru' else "Clear all"):
         # Инициализируем заново все изображения пальцев
         grv.finger_images = {
             HandType.LEFT: {ft: None for ft in FingerType},
@@ -803,141 +799,121 @@ def display_grv_interface(lang: str = 'ru'):
         }
         st.success("Данные очищены" if lang == 'ru' else "Data cleared")
     
-    # Отображаем интерфейс сканирования, если камера подключена
-    if grv.connected:
-        # Выбор руки и пальца
-        col1, col2 = st.columns(2)
-        
-        hand_options = {
-            HandType.LEFT: grv.t['left_hand'],
-            HandType.RIGHT: grv.t['right_hand']
-        }
-        
-        finger_options = {
-            FingerType.THUMB: grv.t['thumb'],
-            FingerType.INDEX: grv.t['index'],
-            FingerType.MIDDLE: grv.t['middle'],
-            FingerType.RING: grv.t['ring'],
-            FingerType.PINKY: grv.t['pinky']
-        }
-        
-        selected_hand_label = col1.selectbox(grv.t['select_hand'], list(hand_options.values()))
-        selected_hand = list(hand_options.keys())[list(hand_options.values()).index(selected_hand_label)]
-        
-        selected_finger_label = col2.selectbox(grv.t['select_finger'], list(finger_options.values()))
-        selected_finger = list(finger_options.keys())[list(finger_options.values()).index(selected_finger_label)]
-        
-        # Отображаем инструкцию для сканирования
-        st.info(grv.t['place_finger'])
-        
-        # Кнопка для захвата изображения
-        if st.button(grv.t['capture']):
-            with st.spinner(grv.t['processing']):
-                frame = grv.capture_finger(selected_hand, selected_finger)
-                if frame is not None:
-                    # Отображаем захваченное изображение
-                    st.image(frame, caption=f"{hand_options[selected_hand]} - {finger_options[selected_finger]}")
-                    
-                    # Обрабатываем и отображаем результаты
-                    results = grv.process_grv_image(frame)
-                    
-                    # Сохраняем результаты обработки
-                    grv.processed_data[selected_hand][selected_finger] = results
-                    
-                    # Отображаем обработанное изображение
-                    if "processed_image" in results:
-                        st.image(results["processed_image"], 
-                                caption="Обработанное изображение" if lang == 'ru' else "Processed image")
-                    
-                    # Отображаем параметры
-                    if "area" in results and "intensity" in results:
-                        st.write(f"Площадь: {results['area']:.2f} пикс.")
-                        st.write(f"Интенсивность: {results['intensity']:.2f}")
-                        if "symmetry" in results:
-                            st.write(f"Симметрия: {results['symmetry']:.2f}")
-                else:
-                    st.error(grv.t['error_capture'])
-        
-        # Панель состояния - показываем, какие пальцы уже отсканированы
-        st.subheader("Статус сканирования" if lang == 'ru' else "Scanning Status")
-        
-        # Создаем сетку для отображения статуса
-        hand_cols = st.columns(2)
-        
-        for i, hand in enumerate([HandType.LEFT, HandType.RIGHT]):
-            with hand_cols[i]:
-                st.write(hand_options[hand])
-                finger_cols = st.columns(5)
-                
-                for j, finger in enumerate(FingerType):
-                    with finger_cols[j]:
-                        if grv.finger_images[hand][finger] is not None:
-                            st.success(finger_options[finger])
-                        else:
-                            st.error(finger_options[finger])
-        
-        # Кнопки для анализа и сохранения/загрузки
-        col1, col2, col3 = st.columns(3)
-        
-        # Кнопка анализа
-        if col1.button(grv.t['analyze']):
-            # Проверяем, все ли пальцы отсканированы
-            all_scanned = True
-            for hand in HandType:
-                for finger in FingerType:
-                    if grv.finger_images[hand][finger] is None:
-                        all_scanned = False
-                        break
+    # Выбор руки и пальца
+    col1, col2 = st.columns(2)
+    
+    hand_options = {
+        HandType.LEFT: "Левая рука" if lang == 'ru' else "Left hand",
+        HandType.RIGHT: "Правая рука" if lang == 'ru' else "Right hand"
+    }
+    
+    finger_options = {
+        FingerType.THUMB: "Большой" if lang == 'ru' else "Thumb",
+        FingerType.INDEX: "Указательный" if lang == 'ru' else "Index",
+        FingerType.MIDDLE: "Средний" if lang == 'ru' else "Middle",
+        FingerType.RING: "Безымянный" if lang == 'ru' else "Ring",
+        FingerType.PINKY: "Мизинец" if lang == 'ru' else "Pinky"
+    }
+    
+    selected_hand_label = col1.selectbox("Выберите руку:" if lang == 'ru' else "Select hand:", list(hand_options.values()))
+    selected_hand = list(hand_options.keys())[list(hand_options.values()).index(selected_hand_label)]
+    
+    selected_finger_label = col2.selectbox("Выберите палец:" if lang == 'ru' else "Select finger:", list(finger_options.values()))
+    selected_finger = list(finger_options.keys())[list(finger_options.values()).index(selected_finger_label)]
+    
+    # Загрузка ГРВ-изображения
+    st.subheader("Загрузка ГРВ-изображения" if lang == 'ru' else "Upload GRV Image")
+    
+    uploaded_file = st.file_uploader(
+        "Выберите файл ГРВ-изображения" if lang == 'ru' else "Choose a GRV image file", 
+        type=["jpg", "jpeg", "png"]
+    )
+    
+    if uploaded_file is not None:
+        # Обработка загруженного изображения
+        process_uploaded_grv_image(grv, uploaded_file, selected_hand, selected_finger, lang)
+    
+    # Панель состояния - показываем, какие пальцы уже отсканированы
+    st.subheader("Статус сканирования" if lang == 'ru' else "Scanning Status")
+    
+    # Создаем сетку для отображения статуса
+    hand_cols = st.columns(2)
+    
+    for i, hand in enumerate([HandType.LEFT, HandType.RIGHT]):
+        with hand_cols[i]:
+            st.write(hand_options[hand])
+            finger_cols = st.columns(5)
             
-            if not all_scanned:
-                st.warning(grv.t['missing_images'])
-            else:
-                with st.spinner(grv.t['processing_images']):
-                    # Обрабатываем все изображения
-                    energy_model = grv.process_all_fingers()
-                    
-                    if "error" in energy_model:
-                        st.error(grv.t.get(energy_model["error"], "Error"))
+            for j, finger in enumerate(FingerType):
+                with finger_cols[j]:
+                    if grv.finger_images[hand][finger] is not None:
+                        st.success(finger_options[finger])
                     else:
-                        # Показываем результаты анализа
-                        st.success(grv.t['preparing_analysis'])
-                        
-                        # Отображаем значения энергии чакр
-                        st.subheader("Энергетическая модель" if lang == 'ru' else "Energy Model")
-                        
-                        # Передаем данные в основное приложение через состояние сессии
-                        st.session_state.chakra_values_from_grv = energy_model["chakra_values"]
-                        
-                        # Отображаем гистограмму значений чакр
-                        fig, ax = plt.subplots(figsize=(10, 5))
-                        chakras = list(energy_model["chakra_values"].keys())
-                        values = list(energy_model["chakra_values"].values())
-                        
-                        ax.bar(chakras, values, color=['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'])
-                        ax.set_ylim(0, 100)
-                        ax.set_ylabel("Энергия (%)" if lang == 'ru' else "Energy (%)")
-                        ax.set_title("Энергетический баланс чакр" if lang == 'ru' else "Chakra Energy Balance")
-                        
-                        st.pyplot(fig)
-                        
-                        # Отображаем индекс баланса
-                        st.metric(
-                            "Индекс баланса" if lang == 'ru' else "Balance Index", 
-                            f"{energy_model['balance_index']:.2f}%"
-                        )
-                        
-                        # Уведомление о готовности данных
-                        st.success("Данные обработаны и готовы к использованию в основном приложении." if lang == 'ru' else 
-                                  "Data processed and ready for use in the main application.")
+                        st.error(finger_options[finger])
+    
+    # Кнопки для анализа и сохранения/загрузки
+    col1, col2, col3 = st.columns(3)
+    
+    # Кнопка анализа
+    if col1.button("Анализировать" if lang == 'ru' else "Analyze"):
+        # Проверяем, все ли пальцы отсканированы
+        all_scanned = True
+        for hand in HandType:
+            for finger in FingerType:
+                if grv.finger_images[hand][finger] is None:
+                    all_scanned = False
+                    break
         
-        # Кнопки сохранения и загрузки сессии
-        if col2.button(grv.t['save_session']):
-            if grv.save_session("grv_session.dat"):
-                st.success(grv.t['session_saved'])
-        
-        if col3.button(grv.t['load_session']):
-            if grv.load_session("grv_session.dat"):
-                st.success(grv.t['session_loaded'])
+        if not all_scanned:
+            st.warning("Не все пальцы отсканированы. Пожалуйста, загрузите все изображения." if lang == 'ru' else 
+                      "Not all fingers have been scanned. Please upload all images.")
+        else:
+            with st.spinner("Обработка изображений..." if lang == 'ru' else "Processing images..."):
+                # Обрабатываем все изображения
+                energy_model = grv.process_all_fingers()
+                
+                if "error" in energy_model:
+                    st.error("Ошибка при обработке данных" if lang == 'ru' else "Error processing data")
+                else:
+                    # Показываем результаты анализа
+                    st.success("Подготовка результатов анализа..." if lang == 'ru' else "Preparing analysis results...")
+                    
+                    # Отображаем значения энергии чакр
+                    st.subheader("Энергетическая модель" if lang == 'ru' else "Energy Model")
+                    
+                    # Передаем данные в основное приложение через состояние сессии
+                    st.session_state.chakra_values_from_grv = energy_model["chakra_values"]
+                    
+                    # Отображаем гистограмму значений чакр
+                    fig, ax = plt.subplots(figsize=(10, 5))
+                    chakras = list(energy_model["chakra_values"].keys())
+                    values = list(energy_model["chakra_values"].values())
+                    
+                    ax.bar(chakras, values, color=['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'])
+                    ax.set_ylim(0, 100)
+                    ax.set_ylabel("Энергия (%)" if lang == 'ru' else "Energy (%)")
+                    ax.set_title("Энергетический баланс чакр" if lang == 'ru' else "Chakra Energy Balance")
+                    
+                    st.pyplot(fig)
+                    
+                    # Отображаем индекс баланса
+                    st.metric(
+                        "Индекс баланса" if lang == 'ru' else "Balance Index", 
+                        f"{energy_model['balance_index']:.2f}%"
+                    )
+                    
+                    # Уведомление о готовности данных
+                    st.success("Данные обработаны и готовы к использованию в основном приложении." if lang == 'ru' else 
+                             "Data processed and ready for use in the main application.")
+    
+    # Кнопки сохранения и загрузки сессии
+    if col2.button("Сохранить сессию" if lang == 'ru' else "Save session"):
+        if grv.save_session("grv_session.dat"):
+            st.success("Сессия успешно сохранена" if lang == 'ru' else "Session saved successfully")
+    
+    if col3.button("Загрузить сессию" if lang == 'ru' else "Load session"):
+        if grv.load_session("grv_session.dat"):
+            st.success("Сессия успешно загружена" if lang == 'ru' else "Session loaded successfully")
 
 
 # Пример использования, если скрипт запущен напрямую
