@@ -1172,7 +1172,7 @@ def display_grv_interface(lang: str = 'ru'):
                 )
                 
                 # Обновляем интерфейс для отображения загруженных данных
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error(
                     "Ошибка при загрузке сессии" if lang == 'ru' else 
