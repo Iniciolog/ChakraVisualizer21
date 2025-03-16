@@ -147,7 +147,7 @@ app_text = {
     "en": {
         "page_title": "KIRLIAN PLATFORM",
         "app_title": "KIRLIAN PLATFORM",
-        "app_intro": "Application for displaying the results of psycho-energetic diagnostics of energy centers and biofield. Developed at the Research Center for Initiology and Transpersonal Psychology. Application author and creator V. P. Lazarenko. Designed for professional psychics. Recommended for diagnostics starting from the 1st stage of Initiology using the method of psychic vision, biolocation on a 100% scale. The diagnostic data needs to be set in the application settings to obtain the original image of chakras and biofield in accordance with the diagnostic results.",
+        "app_intro": "Приложение магнитно - резонансной диагностики, газо-разрядной визуализации, 3d моделирования энергоцентров, 2 Аура - камеры 'Кирлиан' и 'Биорезонанс'.",
         "client_info_header": "Client Information",
         "fullname": "Full Name",
         "birthdate": "Date of Birth",
@@ -248,7 +248,7 @@ app_text = {
     "ru": {
         "page_title": "KIRLIAN PLATFORM",
         "app_title": "KIRLIAN PLATFORM",
-        "app_intro": "Приложение для отображения результатов психо-энергетической диагностики энергоцентров и биополя. Разработано в НИЦ Инициологии и трансперсональной психологии. Автор и создатель приложения В. П. Лазаренко. Предназначено для профессиональных экстрасенсов. Рекомендовано для проведения диагностики начиная с 1 ступени Инициологии по методу психического видения, биолокации по 100% шкале. Данные диагностики необходимо установить в настройках приложения для получения оригинального изображения чакр и биополя в соответствии с результатами диагностики.",
+        "app_intro": "Приложение магнитно - резонансной диагностики, газо-разрядной визуализации, 3d моделирования энергоцентров, 2 Аура - камеры 'Кирлиан' и 'Биорезонанс'.",
         "client_info_header": "Информация о Клиенте",
         "fullname": "ФИО",
         "birthdate": "Дата Рождения",
