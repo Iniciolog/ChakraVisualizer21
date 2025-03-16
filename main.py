@@ -190,7 +190,9 @@ st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
 # Language selector in sidebar
 with st.sidebar:
     # Логотип
-    st.image("assets/images/logo/logo.png", width=150)
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("assets/images/logo/logo.png", width=100, use_column_width=True)
     
     # Navigation buttons
     st.title("🧭 Навигация / Navigation")
