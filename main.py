@@ -798,6 +798,22 @@ for i, tab in enumerate(chakra_tabs):
             **{get_text("imbalanced_signs")}**: {imbalanced_display}
             """)
 
+# Добавляем кнопку для перехода на страницу "Диагностика чакр по 100% шкале"
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; margin: 20px 0;">
+    <a href="/color_gradient_page" target="_self" style="text-decoration: none;">
+        <div style="background-color: #9C27B0; color: white; padding: 15px; text-align: center; border-radius: 5px; 
+                  display: inline-block; min-width: 300px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            Диагностика чакр по 100% шкале
+        </div>
+    </a>
+    <p style="margin-top: 10px; font-style: italic; color: #666;">
+        Интерактивный инструмент для просмотра изменения цветов чакр при разных уровнях энергии
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
 # Footer
 st.markdown("---")
 st.markdown(get_text("footer"))
