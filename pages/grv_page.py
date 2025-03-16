@@ -79,6 +79,32 @@ header[data-testid="stHeader"] {
 # Применяем CSS
 st.markdown(f'<style>{css_content}</style>{additional_css}', unsafe_allow_html=True)
 
+# Hide default Streamlit menu items and footer with custom CSS and JS
+hide_streamlit_elements = """
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+.stSidebar ul[role="listbox"] {display: none !important;}
+.stSidebar div[data-testid="stSidebarNav"] {display: none !important;}
+.stSidebar div.css-1d391kg {display: none !important;}
+.stSidebar div.css-1k8s0as {display: none !important;}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Hide all sidebar navigation elements that contain 'Main' or 'GRV Page'
+    setTimeout(function() {
+        document.querySelectorAll('section[data-testid="stSidebar"] a, section[data-testid="stSidebar"] button, section[data-testid="stSidebar"] [role="listbox"] [role="option"]').forEach(function(el) {
+            if (el.textContent.includes('Main') || el.textContent.includes('GRV') || el.textContent.includes('Grv')) {
+                el.style.display = 'none';
+                if (el.parentElement) el.parentElement.style.display = 'none';
+            }
+        });
+    }, 500);
+});
+</script>
+"""
+st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
+
 # Боковая панель
 with st.sidebar:
     # Navigation buttons
