@@ -203,13 +203,8 @@ with st.sidebar:
         </div>
     </a>
     <a href="/grv_page" target="_self" style="text-decoration: none;">
-        <div style="background-color: #2196F3; color: white; padding: 10px; text-align: center; border-radius: 5px; margin-bottom: 10px;">
+        <div style="background-color: #2196F3; color: white; padding: 10px; text-align: center; border-radius: 5px; margin-bottom: 20px;">
             ГРВ комплекс
-        </div>
-    </a>
-    <a href="/color_gradient_page" target="_self" style="text-decoration: none;">
-        <div style="background-color: #9C27B0; color: white; padding: 10px; text-align: center; border-radius: 5px; margin-bottom: 20px;">
-            Цветовой градиент
         </div>
     </a>
     """, unsafe_allow_html=True)

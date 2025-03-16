@@ -17,8 +17,8 @@ def get_text(key):
         
     texts = {
         'title': {
-            'en': 'Interactive Color Gradient',
-            'ru': 'Интерактивный цветовой градиент'
+            'en': 'Chakra Diagnosis on 100% Scale',
+            'ru': 'Диагностика чакр по 100% шкале'
         },
         'description': {
             'en': 'See how chakra colors change based on energy levels',
