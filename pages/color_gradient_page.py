@@ -233,6 +233,18 @@ def display_color_gradient_page():
     if 'gradient_view' not in st.session_state:
         st.session_state.gradient_view = 'continuous'
     
+    # Check for diagnostic data and use if available
+    use_diagnostic_data = False
+    diagnostic_energy_value = 50  # Default value
+    analysis = {}  # Initialize empty analysis to avoid "possibly unbound" errors
+    
+    if 'report_analysis' in st.session_state and st.session_state.report_analysis:
+        analysis = st.session_state.report_analysis
+        if 'chakra_energy' in analysis:
+            use_diagnostic_data = True
+            st.success("Используются данные из загруженного файла диагностики" if st.session_state.language == 'ru' else
+                       "Using data from the uploaded diagnostic file", icon="✅")
+    
     # Chakra selection
     chakra_names = [c['name_ru'] if st.session_state.language == 'ru' else c['name'] for c in chakra_data]
     
@@ -246,6 +258,13 @@ def display_color_gradient_page():
         )
         # Update session state
         st.session_state.selected_chakra_index = chakra_names.index(selected_chakra)
+        
+        # Get English chakra name for mapping
+        selected_chakra_name_en = chakra_data[st.session_state.selected_chakra_index]['name']
+        
+        # If using diagnostic data, update energy value
+        if use_diagnostic_data and 'chakra_energy' in analysis and selected_chakra_name_en in analysis['chakra_energy']:
+            diagnostic_energy_value = analysis['chakra_energy'][selected_chakra_name_en]
     
     with col2:
         view_options = {
@@ -261,7 +280,21 @@ def display_color_gradient_page():
         )
         st.session_state.gradient_view = selected_view
     
-    # Energy level slider
+    # Reset energy_level when changing chakra if using diagnostic data
+    # Store previous selected chakra to detect changes
+    if 'previous_selected_chakra_index' not in st.session_state:
+        st.session_state.previous_selected_chakra_index = st.session_state.selected_chakra_index
+    
+    # Check if chakra selection changed
+    chakra_changed = st.session_state.previous_selected_chakra_index != st.session_state.selected_chakra_index
+    if chakra_changed and use_diagnostic_data:
+        # Update with new diagnostic value when chakra changes
+        st.session_state.energy_level = int(diagnostic_energy_value)
+    
+    # Update previous selected chakra
+    st.session_state.previous_selected_chakra_index = st.session_state.selected_chakra_index
+    
+    # Energy level slider (use diagnostic value if available)
     energy_level = st.slider(
         get_text('energy_level'), 
         min_value=0, 
