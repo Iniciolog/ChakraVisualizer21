@@ -233,14 +233,15 @@ def display_color_gradient_page():
     if 'gradient_view' not in st.session_state:
         st.session_state.gradient_view = 'continuous'
     
-    # Check for diagnostic data and use if available
+    # Используем глобальные значения energy_values из session_state
+    # Эти значения уже содержат данные из анализа диагностики, если они были загружены
     use_diagnostic_data = False
-    diagnostic_energy_value = 50  # Default value
-    analysis = {}  # Initialize empty analysis to avoid "possibly unbound" errors
+    diagnostic_energy_value = 50  # Значение по умолчанию
     
-    if 'report_analysis' in st.session_state and st.session_state.report_analysis:
-        analysis = st.session_state.report_analysis
-        if 'chakra_energy' in analysis:
+    # Проверяем, есть ли данные диагностики
+    if 'chakra_data_source' in st.session_state:
+        data_source = st.session_state.chakra_data_source
+        if data_source == "report" or data_source == "temp_results":
             use_diagnostic_data = True
             st.success("Используются данные из загруженного файла диагностики" if st.session_state.language == 'ru' else
                        "Using data from the uploaded diagnostic file", icon="✅")
@@ -262,9 +263,9 @@ def display_color_gradient_page():
         # Get English chakra name for mapping
         selected_chakra_name_en = chakra_data[st.session_state.selected_chakra_index]['name']
         
-        # If using diagnostic data, update energy value
-        if use_diagnostic_data and 'chakra_energy' in analysis and selected_chakra_name_en in analysis['chakra_energy']:
-            diagnostic_energy_value = analysis['chakra_energy'][selected_chakra_name_en]
+        # Если используем данные диагностики, обновляем значение энергии из session_state.energy_values
+        if use_diagnostic_data and selected_chakra_name_en in st.session_state.energy_values:
+            diagnostic_energy_value = st.session_state.energy_values[selected_chakra_name_en]
     
     with col2:
         view_options = {
