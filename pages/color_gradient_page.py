@@ -243,8 +243,51 @@ def display_color_gradient_page():
         data_source = st.session_state.chakra_data_source
         if data_source == "report" or data_source == "temp_results":
             use_diagnostic_data = True
-            st.success("Используются данные из загруженного файла диагностики" if st.session_state.language == 'ru' else
-                       "Using data from the uploaded diagnostic file", icon="✅")
+            
+            # Информационное сообщение
+            st.success("Доступны данные из файла диагностики" if st.session_state.language == 'ru' else
+                      "Diagnostic file data available", icon="✅")
+            
+            # Функция для обновления текущего значения из диагностики
+            def apply_current_diagnostic_value():
+                # Устанавливаем текущее значение слайдера на значение из диагностики для выбранной чакры
+                selected_chakra_name_en = chakra_data[st.session_state.selected_chakra_index]['name']
+                if selected_chakra_name_en in st.session_state.energy_values:
+                    st.session_state.energy_level = int(st.session_state.energy_values[selected_chakra_name_en])
+            
+            # Функция для обновления всех значений на основные значения чакр
+            def apply_all_chakra_values():
+                # Для будущего отображения в приложении - сохраняем значения в отдельную переменную сессии
+                st.session_state.chakra_energy_preset = {}
+                for chakra in chakra_data:
+                    chakra_name = chakra['name']
+                    if chakra_name in st.session_state.energy_values:
+                        st.session_state.chakra_energy_preset[chakra_name] = int(st.session_state.energy_values[chakra_name])
+                
+                # Устанавливаем текущее значение для выбранной чакры
+                selected_chakra_name_en = chakra_data[st.session_state.selected_chakra_index]['name']
+                if selected_chakra_name_en in st.session_state.energy_values:
+                    st.session_state.energy_level = int(st.session_state.energy_values[selected_chakra_name_en])
+            
+            # Кнопки управления значениями в отдельных колонках
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Кнопка для применения текущего значения
+                st.button(
+                    "Принять текущее значение" if st.session_state.language == 'ru' else "Apply Current Value",
+                    on_click=apply_current_diagnostic_value,
+                    type="primary"
+                )
+            
+            with col2:
+                # Кнопка для применения всех значений
+                st.button(
+                    "Принять все значения" if st.session_state.language == 'ru' else "Apply All Values",
+                    on_click=apply_all_chakra_values,
+                    help="Применить значения из диагностики для всех чакр" if st.session_state.language == 'ru' else 
+                         "Apply diagnostic values for all chakras"
+                )
     
     # Chakra selection
     chakra_names = [c['name_ru'] if st.session_state.language == 'ru' else c['name'] for c in chakra_data]
@@ -316,6 +359,33 @@ def display_color_gradient_page():
     # Display color swatch
     st.subheader(get_text('color_swatch'))
     display_current_color_swatch(st.session_state.selected_chakra_index, energy_level)
+    
+    # Если доступны значения из диагностики, показываем их
+    if use_diagnostic_data:
+        st.markdown("---")
+        st.subheader("Значения энергии из диагностики" if st.session_state.language == 'ru' else 
+                     "Energy values from diagnostics")
+        
+        # Создаем список для отображения значений чакр
+        chakra_values_list = []
+        for chakra in chakra_data:
+            chakra_name = chakra['name']
+            chakra_name_localized = chakra['name_ru'] if st.session_state.language == 'ru' else chakra['name']
+            if chakra_name in st.session_state.energy_values:
+                value = st.session_state.energy_values[chakra_name]
+                chakra_values_list.append({
+                    "name": chakra_name_localized,
+                    "value": int(value)
+                })
+        
+        # Отображаем значения в виде таблицы
+        if chakra_values_list:
+            # Создаем DataFrame для отображения
+            table_data = {
+                "Чакра" if st.session_state.language == 'ru' else "Chakra": [item["name"] for item in chakra_values_list],
+                "Значение" if st.session_state.language == 'ru' else "Value": [f"{item['value']}%" for item in chakra_values_list]
+            }
+            st.dataframe(table_data, hide_index=True, use_container_width=True)
     
     # Explain the calculation
     st.markdown("---")
