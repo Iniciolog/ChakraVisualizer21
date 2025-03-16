@@ -1,3 +1,3 @@
 [pages]
-"main.py" = "Bioresonans Lab"
-"pages/grv_page.py" = "GRV Lab"
+"main.py" = "Биорезонанс комплекс"
+"pages/grv_page.py" = "ГРВ комплекс"
