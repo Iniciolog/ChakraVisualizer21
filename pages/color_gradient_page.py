@@ -255,7 +255,13 @@ def display_color_gradient_page():
         # Устанавливаем текущее значение слайдера на значение из диагностики для выбранной чакры
         selected_chakra_name_en = chakra_data[st.session_state.selected_chakra_index]['name']
         if selected_chakra_name_en in st.session_state.energy_values:
-            st.session_state.energy_level = int(st.session_state.energy_values[selected_chakra_name_en])
+            # Округляем значение float до целого числа для слайдера
+            value = int(float(st.session_state.energy_values[selected_chakra_name_en]))
+            st.session_state.energy_level = value
+            # Отладочное сообщение для проверки
+            print(f"Применяем значение {value} для чакры {selected_chakra_name_en}")
+            # Вызываем rerun для обновления страницы
+            st.rerun()
     
     # Функция для обновления всех значений на основные значения чакр
     def apply_all_chakra_values():
@@ -264,12 +270,21 @@ def display_color_gradient_page():
         for chakra in chakra_data:
             chakra_name = chakra['name']
             if chakra_name in st.session_state.energy_values:
-                st.session_state.chakra_energy_preset[chakra_name] = int(st.session_state.energy_values[chakra_name])
+                # Округляем значение float до целого числа
+                value = int(float(st.session_state.energy_values[chakra_name]))
+                st.session_state.chakra_energy_preset[chakra_name] = value
+                print(f"Сохраняем предустановку {value} для чакры {chakra_name}")
         
         # Устанавливаем текущее значение для выбранной чакры
         selected_chakra_name_en = chakra_data[st.session_state.selected_chakra_index]['name']
         if selected_chakra_name_en in st.session_state.energy_values:
-            st.session_state.energy_level = int(st.session_state.energy_values[selected_chakra_name_en])
+            # Округляем значение float до целого числа для слайдера
+            value = int(float(st.session_state.energy_values[selected_chakra_name_en]))
+            st.session_state.energy_level = value
+            # Отладочное сообщение для проверки
+            print(f"Применяем значение {value} для чакры {selected_chakra_name_en}")
+            # Вызываем rerun для обновления страницы
+            st.rerun()
     
     # Проверяем, есть ли данные диагностики
     if 'chakra_data_source' in st.session_state:
@@ -344,7 +359,15 @@ def display_color_gradient_page():
     chakra_changed = st.session_state.previous_selected_chakra_index != st.session_state.selected_chakra_index
     if chakra_changed and use_diagnostic_data:
         # Update with new diagnostic value when chakra changes
-        st.session_state.energy_level = int(diagnostic_energy_value)
+        # Преобразуем float в int для слайдера
+        try:
+            value = int(float(diagnostic_energy_value))
+            st.session_state.energy_level = value
+            print(f"Автоматически применено значение {value} при смене чакры")
+        except (ValueError, TypeError):
+            # Если не удалось преобразовать, используем значение по умолчанию
+            st.session_state.energy_level = 50
+            print(f"Ошибка преобразования значения {diagnostic_energy_value} для слайдера")
     
     # Update previous selected chakra
     st.session_state.previous_selected_chakra_index = st.session_state.selected_chakra_index
@@ -383,11 +406,19 @@ def display_color_gradient_page():
             chakra_name = chakra['name']
             chakra_name_localized = chakra['name_ru'] if st.session_state.language == 'ru' else chakra['name']
             if chakra_name in st.session_state.energy_values:
-                value = st.session_state.energy_values[chakra_name]
-                chakra_values_list.append({
-                    "name": chakra_name_localized,
-                    "value": int(value)
-                })
+                # Преобразуем значение из float в int для отображения
+                try:
+                    value = int(float(st.session_state.energy_values[chakra_name]))
+                    chakra_values_list.append({
+                        "name": chakra_name_localized,
+                        "value": value
+                    })
+                except (ValueError, TypeError):
+                    # Если преобразование не удалось, используем 50 как значение по умолчанию
+                    chakra_values_list.append({
+                        "name": chakra_name_localized,
+                        "value": 50
+                    })
         
         # Отображаем значения в виде таблицы
         if chakra_values_list:
