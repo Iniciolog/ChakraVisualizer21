@@ -17,14 +17,24 @@ if 'language' not in st.session_state:
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = '2d'  # Default to 2D view
     
+# Initialize energy_values
+if 'energy_values' not in st.session_state:
+    st.session_state.energy_values = {
+        "Root": 50, 
+        "Sacral": 50, 
+        "Solar Plexus": 50, 
+        "Heart": 50, 
+        "Throat": 50, 
+        "Third Eye": 50, 
+        "Crown": 50
+    }
+    
 # Для тестирования добавляем режим визуализации энергетического профиля
 if 'energy_profile' not in st.session_state:
     st.session_state.energy_profile = 'custom'  # Default: custom profile
     
 # Initialize session state variables
-# Инициализируем значения энергии для чакр при первой загрузке
-if 'energy_values' not in st.session_state:
-    st.session_state.energy_values = {chakra['name']: 100 for chakra in chakra_data}
+# Значения уже инициализированы выше
 
 if 'report_processed' not in st.session_state:
     st.session_state.report_processed = False

@@ -232,6 +232,18 @@ def display_color_gradient_page():
     
     if 'gradient_view' not in st.session_state:
         st.session_state.gradient_view = 'continuous'
+        
+    # Initialize energy_values if not already present
+    if 'energy_values' not in st.session_state:
+        st.session_state.energy_values = {
+            "Root": 50, 
+            "Sacral": 50, 
+            "Solar Plexus": 50, 
+            "Heart": 50, 
+            "Throat": 50, 
+            "Third Eye": 50, 
+            "Crown": 50
+        }
     
     # Используем глобальные значения energy_values из session_state
     # Эти значения уже содержат данные из анализа диагностики, если они были загружены
