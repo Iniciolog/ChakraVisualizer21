@@ -107,6 +107,9 @@ st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
 
 # Боковая панель
 with st.sidebar:
+    # Логотип
+    st.image("assets/images/logo/logo.png", width=150)
+    
     # Navigation buttons
     st.title("🧭 Навигация / Navigation")
     st.markdown("""
