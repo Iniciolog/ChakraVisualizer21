@@ -786,7 +786,7 @@ for i, tab in enumerate(chakra_tabs):
             associated_display = chakra['associated_with_ru'] if st.session_state.language == 'ru' else chakra['associated_with']
             balanced_display = chakra['balanced_qualities_ru'] if st.session_state.language == 'ru' else chakra['balanced_qualities']
             imbalanced_display = chakra['imbalanced_signs_ru'] if st.session_state.language == 'ru' else chakra['imbalanced_signs']
-            healing_display = chakra['healing_practices_ru'] if st.session_state.language == 'ru' else chakra['healing_practices']
+            # Убрали строку healing_display, так как мы не будем больше показывать практики для исцеления
             
             st.markdown(f"""
             ### {get_text("element")}: {element_display}
@@ -796,8 +796,6 @@ for i, tab in enumerate(chakra_tabs):
             **{get_text("balanced_qualities")}**: {balanced_display}
             
             **{get_text("imbalanced_signs")}**: {imbalanced_display}
-            
-            **{get_text("healing_practices")}**: {healing_display}
             """)
 
 # Footer
