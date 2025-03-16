@@ -201,3 +201,22 @@ footer {
 [data-baseweb="modal"] + div {
     background-color: rgba(0, 0, 0, 0.7) !important;
 }
+
+/* Hide default Streamlit sidebar page navigation links */
+section[data-testid="stSidebar"] .stSelectbox[aria-label="Select a page"] {
+    display: none !important;
+}
+
+/* For newer Streamlit versions that use sidebar navigation elements */
+section[data-testid="stSidebar"] [data-testid="stPageLink"] {
+    display: none !important;
+}
+
+/* Hide any other navigation elements in sidebar that might appear */
+section[data-testid="stSidebar"] nav.css-1kyxreq {
+    display: none !important;
+}
+
+section[data-testid="stSidebar"] nav {
+    display: none !important;
+}
