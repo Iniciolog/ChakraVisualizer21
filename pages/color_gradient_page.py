@@ -238,56 +238,55 @@ def display_color_gradient_page():
     use_diagnostic_data = False
     diagnostic_energy_value = 50  # Значение по умолчанию
     
+    # Функция для обновления текущего значения из диагностики
+    def apply_current_diagnostic_value():
+        # Устанавливаем текущее значение слайдера на значение из диагностики для выбранной чакры
+        selected_chakra_name_en = chakra_data[st.session_state.selected_chakra_index]['name']
+        if selected_chakra_name_en in st.session_state.energy_values:
+            st.session_state.energy_level = int(st.session_state.energy_values[selected_chakra_name_en])
+    
+    # Функция для обновления всех значений на основные значения чакр
+    def apply_all_chakra_values():
+        # Для будущего отображения в приложении - сохраняем значения в отдельную переменную сессии
+        st.session_state.chakra_energy_preset = {}
+        for chakra in chakra_data:
+            chakra_name = chakra['name']
+            if chakra_name in st.session_state.energy_values:
+                st.session_state.chakra_energy_preset[chakra_name] = int(st.session_state.energy_values[chakra_name])
+        
+        # Устанавливаем текущее значение для выбранной чакры
+        selected_chakra_name_en = chakra_data[st.session_state.selected_chakra_index]['name']
+        if selected_chakra_name_en in st.session_state.energy_values:
+            st.session_state.energy_level = int(st.session_state.energy_values[selected_chakra_name_en])
+    
     # Проверяем, есть ли данные диагностики
     if 'chakra_data_source' in st.session_state:
         data_source = st.session_state.chakra_data_source
         if data_source == "report" or data_source == "temp_results":
             use_diagnostic_data = True
-            
-            # Информационное сообщение
             st.success("Доступны данные из файла диагностики" if st.session_state.language == 'ru' else
-                      "Diagnostic file data available", icon="✅")
-            
-            # Функция для обновления текущего значения из диагностики
-            def apply_current_diagnostic_value():
-                # Устанавливаем текущее значение слайдера на значение из диагностики для выбранной чакры
-                selected_chakra_name_en = chakra_data[st.session_state.selected_chakra_index]['name']
-                if selected_chakra_name_en in st.session_state.energy_values:
-                    st.session_state.energy_level = int(st.session_state.energy_values[selected_chakra_name_en])
-            
-            # Функция для обновления всех значений на основные значения чакр
-            def apply_all_chakra_values():
-                # Для будущего отображения в приложении - сохраняем значения в отдельную переменную сессии
-                st.session_state.chakra_energy_preset = {}
-                for chakra in chakra_data:
-                    chakra_name = chakra['name']
-                    if chakra_name in st.session_state.energy_values:
-                        st.session_state.chakra_energy_preset[chakra_name] = int(st.session_state.energy_values[chakra_name])
-                
-                # Устанавливаем текущее значение для выбранной чакры
-                selected_chakra_name_en = chakra_data[st.session_state.selected_chakra_index]['name']
-                if selected_chakra_name_en in st.session_state.energy_values:
-                    st.session_state.energy_level = int(st.session_state.energy_values[selected_chakra_name_en])
-            
-            # Кнопки управления значениями в отдельных колонках
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Кнопка для применения текущего значения
-                st.button(
-                    "Принять текущее значение" if st.session_state.language == 'ru' else "Apply Current Value",
-                    on_click=apply_current_diagnostic_value,
-                    type="primary"
-                )
-            
-            with col2:
-                # Кнопка для применения всех значений
-                st.button(
-                    "Принять все значения" if st.session_state.language == 'ru' else "Apply All Values",
-                    on_click=apply_all_chakra_values,
-                    help="Применить значения из диагностики для всех чакр" if st.session_state.language == 'ru' else 
-                         "Apply diagnostic values for all chakras"
-                )
+                     "Diagnostic file data available", icon="✅")
+    
+    # Кнопки управления значениями в отдельных колонках
+    st.subheader("Управление значениями" if st.session_state.language == 'ru' else "Value Controls")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Кнопка для применения текущего значения
+        st.button(
+            "Принять текущее значение" if st.session_state.language == 'ru' else "Apply Current Value",
+            on_click=apply_current_diagnostic_value,
+            type="primary"
+        )
+    
+    with col2:
+        # Кнопка для применения всех значений
+        st.button(
+            "Принять все значения" if st.session_state.language == 'ru' else "Apply All Values",
+            on_click=apply_all_chakra_values,
+            help="Применить значения из диагностики для всех чакр" if st.session_state.language == 'ru' else 
+                 "Apply diagnostic values for all chakras"
+        )
     
     # Chakra selection
     chakra_names = [c['name_ru'] if st.session_state.language == 'ru' else c['name'] for c in chakra_data]
