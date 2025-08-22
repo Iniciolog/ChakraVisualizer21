@@ -86,39 +86,90 @@ def display_download_page():
         st.subheader("🪟 " + get_text('windows_title'))
         st.markdown(get_text('windows_requirements'))
         
-        # Check if Windows build exists
-        windows_build_path = "desktop-app/dist/Kirlian Platform Setup.exe"
-        if os.path.exists(windows_build_path):
-            with open(windows_build_path, 'rb') as f:
-                st.download_button(
-                    label=f"📥 {get_text('download_button')} (Windows)",
-                    data=f.read(),
-                    file_name="Kirlian_Platform_Setup.exe",
-                    mime="application/octet-stream",
-                    type="primary"
-                )
+        # Портативная версия для Windows
+        portable_path = "releases/portable/"
+        if os.path.exists(portable_path):
+            # Кнопка загрузки портативной версии
+            st.success("✅ Портативная версия готова!" if st.session_state.language == 'ru' else "✅ Portable version ready!")
+            
+            # Создаем временный zip файл для Windows
+            import zipfile
+            import tempfile
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
+                with zipfile.ZipFile(tmp_file.name, 'w') as zipf:
+                    for root, dirs, files in os.walk(portable_path):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arc_name = os.path.relpath(file_path, portable_path)
+                            zipf.write(file_path, arc_name)
+                
+                with open(tmp_file.name, 'rb') as f:
+                    st.download_button(
+                        label=f"📥 {get_text('download_button')} Портативная версия",
+                        data=f.read(),
+                        file_name="Kirlian_Platform_Windows_Portable.zip",
+                        mime="application/zip",
+                        type="primary"
+                    )
         else:
-            st.warning("Windows версия в процессе сборки..." if st.session_state.language == 'ru' else "Windows version is being built...")
-            st.info("Для сборки выполните:\n```bash\ncd desktop-app\nnpm install\nnpm run build-win\n```")
+            st.warning("Портативная версия не найдена" if st.session_state.language == 'ru' else "Portable version not found")
+            
+        st.info("""
+        **Портативная версия:**
+        • Не требует установки
+        • Работает сразу после распаковки
+        • Полная функциональность
+        • Требует Python 3.8+
+        """ if st.session_state.language == 'ru' else """
+        **Portable version:**
+        • No installation required
+        • Works immediately after extraction
+        • Full functionality
+        • Requires Python 3.8+
+        """)
     
     with col2:
         st.subheader("🍎 " + get_text('mac_title'))
         st.markdown(get_text('mac_requirements'))
         
-        # Check if Mac build exists
-        mac_build_path = "desktop-app/dist/Kirlian Platform.dmg"
-        if os.path.exists(mac_build_path):
-            with open(mac_build_path, 'rb') as f:
-                st.download_button(
-                    label=f"📥 {get_text('download_button')} (Mac)",
-                    data=f.read(),
-                    file_name="Kirlian_Platform.dmg",
-                    mime="application/octet-stream",
-                    type="primary"
-                )
+        # Портативная версия для Mac  
+        portable_path = "releases/portable/"
+        if os.path.exists(portable_path):
+            st.success("✅ Портативная версия готова!" if st.session_state.language == 'ru' else "✅ Portable version ready!")
+            
+            # Создаем tar.gz архив для Mac/Linux
+            import tarfile
+            import tempfile
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.tar.gz') as tmp_file:
+                with tarfile.open(tmp_file.name, 'w:gz') as tar:
+                    tar.add(portable_path, arcname='Kirlian_Platform')
+                
+                with open(tmp_file.name, 'rb') as f:
+                    st.download_button(
+                        label=f"📥 {get_text('download_button')} Портативная версия",
+                        data=f.read(),
+                        file_name="Kirlian_Platform_Mac_Portable.tar.gz",
+                        mime="application/gzip",
+                        type="primary"
+                    )
         else:
-            st.warning("Mac версия в процессе сборки..." if st.session_state.language == 'ru' else "Mac version is being built...")
-            st.info("Для сборки выполните:\n```bash\ncd desktop-app\nnpm install\nnpm run build-mac\n```")
+            st.warning("Портативная версия не найдена" if st.session_state.language == 'ru' else "Portable version not found")
+            
+        st.info("""
+        **Портативная версия:**
+        • Распакуйте архив
+        • Запустите start_kirlian_platform.sh
+        • Или python3 Kirlian_Platform_Launcher.py
+        • Требует Python 3.8+
+        """ if st.session_state.language == 'ru' else """
+        **Portable version:**
+        • Extract the archive
+        • Run start_kirlian_platform.sh
+        • Or python3 Kirlian_Platform_Launcher.py
+        • Requires Python 3.8+
+        """)
     
     # Installation guides
     st.markdown("---")
