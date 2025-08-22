@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка Kirlian Platform</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0E0E20 0%, #14142B 100%);
+            color: #E0E0E0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .loading-container {
+            text-align: center;
+            max-width: 500px;
+            padding: 40px;
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: linear-gradient(45deg, #7A6EBF, #9C88FF);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 10px 30px rgba(122, 110, 191, 0.3);
+        }
+        
+        h1 {
+            color: #7A6EBF;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .subtitle {
+            color: #B0B0B0;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            margin: 20px auto;
+            border: 4px solid #2A2A3A;
+            border-top: 4px solid #7A6EBF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            margin-top: 20px;
+            color: #9A9A9A;
+            font-size: 0.9em;
+        }
+        
+        .footer {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #666;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-container">
+        <div class="logo">K</div>
+        <h1>Kirlian Platform</h1>
+        <div class="subtitle">Платформа биорезонансной диагностики</div>
+        <div class="spinner"></div>
+        <div class="loading-text">Запуск приложения...</div>
+    </div>
+    
+    <div class="footer">
+        НИЦ Инициологии и трансперсональной психологии
+    </div>
+</body>
+</html>

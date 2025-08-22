@@ -260,8 +260,6 @@ def display_color_gradient_page():
             st.session_state.energy_level = value
             # Отладочное сообщение для проверки
             print(f"Применяем значение {value} для чакры {selected_chakra_name_en}")
-            # Вызываем rerun для обновления страницы
-            st.rerun()
     
     # Функция для обновления всех значений на основные значения чакр
     def apply_all_chakra_values():
@@ -283,8 +281,6 @@ def display_color_gradient_page():
             st.session_state.energy_level = value
             # Отладочное сообщение для проверки
             print(f"Применяем значение {value} для чакры {selected_chakra_name_en}")
-            # Вызываем rerun для обновления страницы
-            st.rerun()
     
     # Проверяем, есть ли данные диагностики
     if 'chakra_data_source' in st.session_state:

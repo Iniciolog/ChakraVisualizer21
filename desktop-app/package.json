@@ -1,0 +1,66 @@
+{
+  "name": "kirlian-platform-desktop",
+  "version": "1.0.0",
+  "description": "Kirlian Platform Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "dist": "electron-builder --publish=never"
+  },
+  "author": "НИЦ Инициологии и трансперсональной психологии",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "child_process": "^1.0.2",
+    "path": "^0.12.7"
+  },
+  "build": {
+    "appId": "com.kirlian.platform",
+    "productName": "Kirlian Platform",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "icon.png",
+      "../**/*",
+      "!../desktop-app",
+      "!../.git",
+      "!../node_modules"
+    ],
+    "mac": {
+      "category": "public.app-category.medical",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
